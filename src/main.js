@@ -64,7 +64,7 @@ const $ = (id) => document.getElementById(id);
 const cards = [
   ["lean", "Lean", "MoveHorizontal", "A / D"],
   ["squat", "Squat", "ArrowDown", "S / ↓"],
-  ["jump", "Jump", "ArrowUp", "Space"],
+  ["jump", "Hands-up jump", "ArrowUp", "Space"],
   ["swing", "Hand swing", "Hand", "J"],
   ["run", "Run in place", "Footprints", "Hold W"],
 ];
@@ -101,12 +101,12 @@ document.querySelector("#app").innerHTML = `
 <div class="game-message" id="gameMessage" role="status" aria-live="polite"></div><div class="game-feedback" id="gameFeedback"></div>
 <div class="game-results" id="gameResults" hidden><span>SESSION RESULTS</span><h3 id="resultTitle">Run complete</h3><strong id="resultScore">0</strong><p id="resultDetails"></p><button class="button primary" id="replayRunner">Play again ↗</button></div></div>
 <aside class="runner-monitor" aria-label="Live webcam playtest monitor"><div class="monitor-heading"><strong>${icon("Camera")} Your movement</strong><span id="monitorBadge">CAMERA OFF</span></div><div class="monitor-preview" id="monitorPreview"><canvas id="monitorCanvas" aria-label="Mirrored live webcam and skeleton preview"></canvas><p id="monitorEmpty">Enable webcam to see your full body here while you play.</p></div><p id="monitorStatus" role="status">Enable webcam, then calibrate.</p><div class="monitor-quality" aria-label="Body visibility"><span id="monitor-torso">Torso —</span><span id="monitor-hands">Hands —</span><span id="monitor-legs">Feet —</span></div><div class="monitor-actions"><button class="button dark compact" id="monitorEnable">Enable webcam</button><button class="button secondary compact" id="monitorStop" aria-label="Stop webcam from game view">Stop</button><button class="button primary compact" id="monitorCalibrate">Calibrate stance</button><button class="text-button" id="monitorKeyboard">Use keyboard instead</button></div><small>Same camera · on-device only · no video stored</small></aside></div>
-<div class="handsfree-bar"><label><input type="checkbox" id="handsFreeEnabled" checked> Hands-free webcam start</label><span id="handsFreeStatus" role="status">Enable webcam, then step back. Auto-calibrate → 3–2–1 → run.</span></div><div class="runner-toolbar"><select id="runMode" aria-label="Runner mode"><option value="auto">B · Auto-run</option><option value="steps">A · Run in place</option></select><select id="runDifficulty" aria-label="Runner difficulty"><option value="easy">Easy · 6 m/s</option><option value="normal">Normal · 8 m/s</option><option value="hard">Hard · 10 m/s</option></select><button class="button dark compact" id="playRunner">▶ Start run</button><button class="button secondary compact" id="resetRunner">${icon("RotateCcw")} Reset</button></div>
-<p class="runner-footnote">Lean / A-D: lanes · Space: jump orange blocks · S: duck blue bars · W: run in mode A · Escape: pause. Gold pickups +100; clear a row +50.</p><div class="runner-session" id="gameSession">60-second run · 3 lives · Seed 2026 · Mode changes reset the run</div></section>
+<div class="handsfree-bar"><label><input type="checkbox" id="handsFreeEnabled" checked> Hands-free webcam start</label><span id="handsFreeStatus" role="status">Enable webcam, then step back. Auto-calibrate → 3–2–1 → run.</span></div><div class="runner-toolbar"><select id="runMode" aria-label="Runner mode"><option value="auto">B · Auto-run</option><option value="steps">A · Run in place</option></select><select id="runDifficulty" aria-label="Runner difficulty"><option value="easy">Easy · 6 m/s</option><option value="normal" selected>Normal · 8 m/s</option><option value="hard">Hard · 10 m/s</option></select><button class="button dark compact" id="playRunner">▶ Start run</button><button class="button secondary compact" id="resetRunner">${icon("RotateCcw")} Reset</button></div>
+<p class="runner-footnote">Lean / A-D: lanes · Both hands up / Space: jump orange blocks · S: duck blue bars · W: run in mode A · Escape: pause. Gold pickups +100; clear a row +50.</p><div class="runner-session" id="gameSession">60-second run · 3 lives · Seed 2026 · Mode changes reset the run</div></section>
 <section class="panel tuning-panel" id="tuningPanel"><div class="small-heading"><h2>${icon("Settings2")} Input sensitivity</h2><button class="text-button" id="resetThresholds">Reset</button></div><p>Starting points, not universal settings. Tune for your camera and player.</p>${[
   ["lean", "Lean dead zone", 0.05, 0.4, 0.01],
   ["squat", "Squat depth", 0.1, 0.5, 0.01],
-  ["jump", "Jump lift", 0.06, 0.3, 0.01],
+  ["jump", "Hands-up margin", 0.06, 0.3, 0.01],
   ["swing", "Swing velocity", 1, 6, 0.1],
   ["step", "Step height", 0.08, 0.4, 0.01],
 ]
@@ -118,7 +118,7 @@ document.querySelector("#app").innerHTML = `
     "",
   )}<div class="tune-note">${icon("ShieldCheck")} Settings apply to this session only.</div></section></div>
 <footer><span><span class="footer-dot"></span> Built for real-world play.</span><span>WonderLab Motion Studio <b>·</b> Motion Lab / 001</span></footer></main></div>
-<dialog id="guideDialog"><div class="dialog-heading"><h2>Your first motion test</h2><button id="closeGuide" class="icon-button" aria-label="Close guide">✕</button></div><ol><li>Allow camera access on this HTTPS page. If embedded-camera permissions are blocked, open the preview in its own tab.</li><li>Frame your head, relaxed hands, knees and feet with room to move. Keep the floor clear.</li><li>Hands-free start is on by default: enable webcam, step back into full view and hold still. Calibration runs automatically, followed by a 3–2–1 countdown. Pause/Escape cancels auto-start; press Step back to start before returning to your stance. Disable Hands-free start for manual Motion Lab tests.</li><li>Try lean, squat, small optional jump, hand swing and alternating steps. Detectors are experimental; check false triggers and missed actions.</li><li>Use Keyboard test without a camera: A/D lean, S crouch, Space jump, J swing, hold W to simulate steps. Escape pauses the game. Lean chooses a lane; orange blocks need a jump, blue bars need a squat. Mode A needs W or running in place.</li></ol><p>One player only. No video is stored or uploaded. Stop the camera when finished. Recalibrate for each player or camera position. Avoid jumping if unsafe.</p><button class="button dark full" id="gotIt">Got it, let’s move ${icon("ArrowUpRight")}</button></dialog><div id="toast" role="status"></div>`;
+<dialog id="guideDialog"><div class="dialog-heading"><h2>Your first motion test</h2><button id="closeGuide" class="icon-button" aria-label="Close guide">✕</button></div><ol><li>Allow camera access on this HTTPS page. If embedded-camera permissions are blocked, open the preview in its own tab.</li><li>Frame your head, relaxed hands, knees and feet with room to move. Keep the floor clear.</li><li>Hands-free start is on by default: enable webcam, step back into full view and hold still. Calibration runs automatically, followed by a 3–2–1 countdown. Pause/Escape cancels auto-start; press Step back to start before returning to your stance. Disable Hands-free start for manual Motion Lab tests.</li><li>Try lean, squat, both hands just above your shoulders to jump, hand swing and alternating steps. Lower both hands before raising them again. No physical jumping is needed; keep wrists inside the camera frame. Detectors are experimental; check false triggers and missed actions.</li><li>Use Keyboard test without a camera: A/D lean, S crouch, Space jump, J swing, hold W to simulate steps. Escape pauses the game. Lean chooses a lane; orange blocks need both hands raised (or Space), blue bars need a squat. Mode A needs W or running in place.</li></ol><p>One player only. No video is stored or uploaded. Stop the camera when finished. Recalibrate for each player or camera position. Keep feet on the floor; a physical jump is not used as a control.</p><button class="button dark full" id="gotIt">Got it, let’s move ${icon("ArrowUpRight")}</button></dialog><div id="toast" role="status"></div>`;
 const keyboardEmptyMarkup = `<div class="keyboard-visual">${icon("Keyboard")}</div><h3>Your keyboard. Your controller.</h3><p>No camera needed. Test the same game inputs<br>with a few familiar keys.</p><div class="keyboard-map"><span>A / D <small>Lean</small></span><span>W <small>Run</small></span><span>S <small>Squat</small></span><span>Space <small>Jump</small></span><span>J <small>Swing</small></span></div><span class="privacy">SIMULATED INPUTS · NOT WEBCAM TRACKING</span>`;
 const keyboardView = document.createElement("div");
 keyboardView.id = "keyboardView";
@@ -129,6 +129,7 @@ $("cameraStage").append(keyboardView);
 createIcons({ icons });
 const engine = new MotionEngine();
 const game = new RunnerGame();
+game.reset({ difficulty: "normal" });
 const handsFree = new HandsFreeStart();
 const runner = createRunner($("runner"));
 if (runner.error) $("runnerState").textContent = runner.error;
@@ -632,7 +633,7 @@ function updateMonitor(a) {
               : !engine.profile
                 ? "Full body visible · Calibrate your neutral stance"
                 : a.valid
-                  ? "Calibrated · Full body tracked"
+                  ? "Calibrated · Hands above shoulders = jump; lower to re-arm"
                   : "Waiting for fresh tracking · Game paused";
   for (const [id, label] of [
     ["torso", "Torso"],

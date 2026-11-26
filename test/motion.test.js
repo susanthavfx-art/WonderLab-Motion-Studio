@@ -100,17 +100,38 @@ test("squat is held and clears on neutral return", () => {
   assert.equal(e.update(p, 2200).actions.squat, true);
   assert.equal(e.update(pose(), 2250).actions.squat, false);
 });
-test("jump emits once per lift and cannot trigger with one foot", () => {
+test("physical jumps no longer trigger the jump action", () => {
   const e = calibrated();
   const p = pose();
   for (const i of [23, 24, 27, 28]) p[i].y -= 0.06;
-  assert.equal(e.update(p, 2200).actions.jump, true);
+  assert.equal(e.update(p, 2200).actions.jump, false);
+});
+test("both hands up emits once; lower both hands before another jump", () => {
+  const e = calibrated();
+  e.update(pose(), 2200);
+  const p = pose();
+  p[15].y = 0.24;
+  p[16].y = 0.24;
   assert.equal(e.update(p, 2250).actions.jump, false);
-  e.update(pose(), 2300);
   assert.equal(e.update(p, 2350).actions.jump, true);
-  e.update(pose(), 2400);
-  p[28].y = 0.92;
-  assert.equal(e.update(p, 2450).actions.jump, false);
+  for (let t = 2400; t <= 3000; t += 50)
+    assert.equal(e.update(p, t).actions.jump, false);
+  e.update(pose(), 3050);
+  e.update(pose(), 3250);
+  e.update(p, 3300);
+  assert.equal(e.update(p, 3400).actions.jump, true);
+});
+test("hands up does not suppress alternating knee tracking", () => {
+  const e = calibrated();
+  e.update(pose(), 2200);
+  const p = pose();
+  p[15].y = 0.24;
+  p[16].y = 0.24;
+  p[25].y -= 0.07;
+  e.update(p, 2300);
+  p[25].y = 0.73;
+  p[26].y -= 0.07;
+  assert.ok(e.update(p, 2550).actions.cadence > 0);
 });
 test("swing emits with cooldown, no replay each inference", () => {
   const e = calibrated();
@@ -131,7 +152,7 @@ test("alternating knees yield cadence, which decays on stopping", () => {
   e.update(pose(), 2500);
   const a = e.update(right, 2700).actions;
   assert.ok(a.cadence > 0);
-  for (let t = 2800; t <= 3800; t += 100) e.update(pose(), t);
+  for (let t = 2800; t <= 4200; t += 100) e.update(pose(), t);
   assert.equal(e.actions.cadence, 0);
 });
 test("simultaneous knees do not count as steps", () => {
@@ -154,4 +175,20 @@ test("timestamp gap resets temporal history", () => {
   const p = pose();
   p[15].x -= 0.2;
   assert.equal(e.update(p, 5000).actions.swing, false);
+});
+
+test("cadence stays steady between normal steps then decays to zero", () => {
+  const e = calibrated();
+  e.update(pose(), 2200);
+  const left = pose();
+  left[25].y -= 0.07;
+  const right = pose();
+  right[26].y -= 0.07;
+  e.update(left, 2300);
+  e.update(pose(), 2450);
+  const speed = e.update(right, 2600).actions.cadence;
+  assert.equal(e.update(pose(), 2800).actions.cadence, speed);
+  assert.equal(e.update(pose(), 3000).actions.cadence, speed);
+  for (let t = 3100; t <= 4100; t += 100) e.update(pose(), t);
+  assert.equal(e.actions.intensity, 0);
 });
