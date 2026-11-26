@@ -140,7 +140,7 @@ export function disposeModel(gltf) {
   });
   images.forEach((i) => i.close?.());
 }
-export async function loadGlb(file) {
+export async function loadGlb(file, { allowFlat = false } = {}) {
   if (!file || file.size > GLB_LIMIT || !file.size)
     throw Error("Choose a non-empty GLB up to 20 MB.");
   const buffer = await file.arrayBuffer();
@@ -188,7 +188,7 @@ export async function loadGlb(file) {
         ...bounds.min.toArray(),
         ...bounds.max.toArray(),
       ].every(Number.isFinite) ||
-      size.y < 0.00001
+      (allowFlat ? Math.max(size.x, size.y, size.z) : size.y) < 0.00001
     )
       throw Error("GLB has no visible, finite-height geometry.");
     gltf.scene.traverse((o) => {

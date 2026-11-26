@@ -1,3 +1,5 @@
+import { mountObjectEditor } from "./assets/object-editor.js";
+import { OBJECT_KEYS } from "./assets/object-settings.js";
 import { mountCharacterEditor } from "./assets/character-editor.js";
 import "./style.css";
 import {
@@ -966,6 +968,16 @@ const characterEditor = mountCharacterEditor({
   },
   changed,
 });
+const objectEditor = mountObjectEditor({
+  view: runner.objects,
+  pause: () => {
+    handsFree.disarm();
+    game.pause("3D objects edited · Re-arm when ready");
+    keys.clear();
+    keyJump = keySwing = false;
+  },
+  changed,
+});
 const studio = mountProjectStudio({
   pause: () => {
     handsFree.disarm();
@@ -977,6 +989,7 @@ const studio = mountProjectStudio({
     if (pendingImages)
       throw Error("Wait for image validation to finish, then retry");
     const character = characterEditor.capture();
+    const objects = objectEditor.capture();
     return {
       branding: { ...branding },
       settings: {
@@ -986,16 +999,25 @@ const studio = mountProjectStudio({
         handsFree: $("handsFreeEnabled").checked,
         thresholds: { ...engine.thresholds },
         character: character.settings,
+        objects: objects.settings,
       },
-      files: { ...brandFiles, character: character.file },
+      files: { ...brandFiles, character: character.file, ...objects.files },
     };
   },
   assign: async (slot, file) => {
     if (slot === "character") await characterEditor.load(file);
+    else if (OBJECT_KEYS.includes(slot)) await objectEditor.load(slot, file);
     else await loadBrandFile(file, slot);
   },
   apply: async (project, files) => {
-    await characterEditor.load(files.character, project.settings.character);
+    const staged = await objectEditor.stage(files, project.settings.objects);
+    try {
+      await characterEditor.load(files.character, project.settings.character);
+      staged.commit();
+    } catch (e) {
+      staged.discard();
+      throw e;
+    }
     stop();
     handsFree.disarm();
     resetMotion();

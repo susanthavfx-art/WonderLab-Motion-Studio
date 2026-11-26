@@ -1,3 +1,4 @@
+import { createObjectView } from "./assets/object-view.js";
 import { createCharacterView } from "./assets/character-view.js";
 import * as T from "three";
 // Renderer only: all gameplay, scoring and timing live in runner-game.js.
@@ -39,10 +40,11 @@ export function createRunner(host) {
   const rails = [-4.3, 4.3].map((x) =>
     box(0.15, 0.15, 60, "#5b755e", x, 0, -23),
   );
+  const defaultScenery = [];
   for (let i = 0; i < 16; i++) {
     const x = (i % 2 ? 1 : -1) * (5 + (i % 3));
-    box(0.3, 1.5, 0.3, "#75926f", x, 0.75, -i * 3);
-    box(1.6, 2, 1.6, "#a7b797", x, 2, -i * 3);
+    defaultScenery.push(box(0.3, 1.5, 0.3, "#75926f", x, 0.75, -i * 3));
+    defaultScenery.push(box(1.6, 2, 1.6, "#a7b797", x, 2, -i * 3));
   }
   const avatar = new T.Group();
   scene.add(avatar);
@@ -72,10 +74,12 @@ export function createRunner(host) {
     coin: box(0.42, 0.42, 0.18, "#edc649", 0, 1, -30),
   }));
   const character = createCharacterView(scene);
+  const objects = createObjectView(scene);
   let width = 0,
     height = 0;
   return {
     character,
+    objects,
     setBrand(brand) {
       body.material.color.set(brand.primary);
       arms.forEach((m) => m.material.color.set(brand.accent));
@@ -113,13 +117,17 @@ export function createRunner(host) {
           (m.position.z =
             3 - ((Math.floor(i / 2) * 3 + 48 - (game.distance % 48)) % 48)),
       );
+      objects.draw(game);
+      defaultScenery.forEach((m) => (m.visible = !objects.has("environment")));
       obstacles.forEach((pool, i) => {
         const row = game.course[game.nextRow + i];
         const visible = !!row && row.distance - game.distance < 49;
-        pool.block.visible = visible && row.type === "block";
-        pool.bar.visible = visible && row.type === "bar";
+        pool.block.visible =
+          visible && row.type === "block" && !objects.has("jumpObstacle");
+        pool.bar.visible =
+          visible && row.type === "bar" && !objects.has("duckObstacle");
         pool.posts.forEach((m) => (m.visible = visible && row.type === "bar"));
-        pool.coin.visible = visible;
+        pool.coin.visible = visible && !objects.has("collectible");
         if (!visible) return;
         const z = game.distance - row.distance;
         pool.block.position.set(row.lane * 2.2, 0.4, z);
@@ -134,6 +142,7 @@ export function createRunner(host) {
     },
     dispose() {
       character.dispose();
+      objects.dispose();
       scene.traverse((o) => {
         o.geometry?.dispose();
         if (o.material) o.material.dispose();

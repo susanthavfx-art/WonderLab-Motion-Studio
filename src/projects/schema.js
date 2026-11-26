@@ -1,4 +1,9 @@
 import {
+  OBJECT_KEYS,
+  defaultObjects,
+  validateObjects,
+} from "../assets/object-settings.js";
+import {
   validateCharacter,
   defaultCharacter,
 } from "../assets/character-settings.js";
@@ -13,6 +18,7 @@ export const defaultSettings = () => ({
   handsFree: true,
   thresholds: { ...defaults },
   character: defaultCharacter(),
+  objects: defaultObjects(),
 });
 export function validateProject(p) {
   if (!p || p.schemaVersion !== 1)
@@ -80,6 +86,7 @@ export function validateProject(p) {
       jumpInput: s.jumpInput,
       handsFree: s.handsFree,
       character: validateCharacter(s.character),
+      objects: validateObjects(s.objects),
       thresholds: Object.fromEntries(
         Object.keys(defaults).map((k) => [k, s.thresholds[k]]),
       ),
@@ -88,6 +95,9 @@ export function validateProject(p) {
       logo: p.assetRefs.logo ?? null,
       background: p.assetRefs.background ?? null,
       character: p.assetRefs.character ?? null,
+      ...Object.fromEntries(
+        OBJECT_KEYS.map((k) => [k, p.assetRefs[k] ?? null]),
+      ),
     },
     updatedAt: Number.isFinite(p.updatedAt) ? p.updatedAt : Date.now(),
   };
@@ -101,7 +111,12 @@ export function newProject(name = "Untitled client project") {
     templateVersion: 1,
     branding: { ...brandDefaults },
     settings: defaultSettings(),
-    assetRefs: { logo: null, background: null, character: null },
+    assetRefs: {
+      logo: null,
+      background: null,
+      character: null,
+      ...Object.fromEntries(OBJECT_KEYS.map((k) => [k, null])),
+    },
     updatedAt: Date.now(),
   };
 }

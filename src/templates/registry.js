@@ -1,3 +1,4 @@
+import { OBJECT_KEYS, OBJECT_SLOTS } from "../assets/object-settings.js";
 import { RunnerGame } from "../runner-game.js";
 import { createRunner } from "../runner.js";
 export const runnerTemplate = Object.freeze({
@@ -10,6 +11,11 @@ export const runnerTemplate = Object.freeze({
     { id: "logo", type: "image", label: "Company logo" },
     { id: "background", type: "image", label: "Backdrop" },
     { id: "character", type: "model", label: "GLB character" },
+    ...OBJECT_KEYS.map((id) => ({
+      id,
+      type: "model",
+      label: OBJECT_SLOTS[id].label,
+    })),
   ],
   create(host) {
     const game = new RunnerGame();

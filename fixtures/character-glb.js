@@ -20,7 +20,11 @@ export function packGlb(json, binary = new Uint8Array()) {
   }
   return out;
 }
-export function characterGlb({ animated = true, texture = false } = {}) {
+export function characterGlb({
+  animated = true,
+  texture = false,
+  flat = false,
+} = {}) {
   const json = {
     asset: { version: "2.0", generator: "WonderLab test fixture" },
     scene: 0,
@@ -72,14 +76,16 @@ export function characterGlb({ animated = true, texture = false } = {}) {
     return i;
   }
   const p = add(
-    new Float32Array([
-      -0.3, 0, -0.3, 0.3, 0, -0.3, 0.3, 2, -0.3, -0.3, 2, -0.3, -0.3, 0, 0.3,
-      0.3, 0, 0.3, 0.3, 2, 0.3, -0.3, 2, 0.3,
-    ]),
+    new Float32Array(
+      [
+        -0.3, 0, -0.3, 0.3, 0, -0.3, 0.3, 2, -0.3, -0.3, 2, -0.3, -0.3, 0, 0.3,
+        0.3, 0, 0.3, 0.3, 2, 0.3, -0.3, 2, 0.3,
+      ].map((v, i) => (flat && i % 3 === 1 ? 0 : v)),
+    ),
     "VEC3",
     5126,
     [-0.3, 0, -0.3],
-    [0.3, 2, 0.3],
+    [0.3, flat ? 0 : 2, 0.3],
   );
   const indices = add(
     new Uint16Array([

@@ -2388,3 +2388,82 @@ dialog p {
     max-width: 100%;
   }
 }
+
+.object-panel {
+  margin: 24px 0;
+  padding: 24px;
+}
+.object-panel > p,
+.object-panel > small {
+  font-size: 12px;
+  color: #657366;
+  line-height: 1.7;
+}
+.object-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+}
+.object-slot {
+  padding: 16px;
+  border: 1px solid #dce2d5;
+  border-radius: 12px;
+  min-width: 0;
+}
+.object-slot summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.object-slot label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.object-slot input {
+  padding: 8px;
+  border: 1px solid #dce2d5;
+  border-radius: 6px;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.object-slot input[type="file"] {
+  font-size: 11px;
+}
+.object-slot fieldset {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #dce2d5;
+  border-radius: 8px;
+}
+.object-slot legend {
+  font-size: 11px;
+  color: #657366;
+}
+.object-slot p {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.object-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+}
+@media (max-width: 700px) {
+  .object-grid {
+    grid-template-columns: 1fr;
+  }
+  .object-panel {
+    padding: 16px;
+  }
+}
