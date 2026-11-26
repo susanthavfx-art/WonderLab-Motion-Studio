@@ -1541,3 +1541,174 @@ dialog p {
   color: #91a27d;
   margin-top: 6px;
 }
+/* Playable runner milestone */
+.runner-panel .runner-stage {
+  height: 360px;
+  isolation: isolate;
+}
+.runner-panel .runner-toolbar {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.runner-panel #playRunner {
+  margin-left: auto;
+}
+.runner-hud {
+  position: absolute;
+  inset: 48px 14px auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  background: #f8fbeddf;
+  border: 1px solid #b3c1a57a;
+  padding: 10px 14px;
+  border-radius: 5px;
+  z-index: 2;
+  pointer-events: none;
+}
+.runner-hud > span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  letter-spacing: 1px;
+  font-size: 7px;
+  color: #7b8c68;
+}
+.runner-hud b {
+  font-size: 16px;
+  letter-spacing: 0;
+  color: #344b2a;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.game-message {
+  position: absolute;
+  inset: 48% 12% auto;
+  text-align: center;
+  z-index: 3;
+  font-size: 17px;
+  font-weight: 600;
+  color: #263f2b;
+  text-shadow: 0 1px 6px #fff;
+  background: #f8fbedda;
+  border-radius: 6px;
+  padding: 10px;
+  pointer-events: none;
+}
+.game-message:empty {
+  display: none;
+}
+.game-feedback {
+  position: absolute;
+  bottom: 16px;
+  left: 10px;
+  right: 10px;
+  text-align: center;
+  color: #2f4b24;
+  font-weight: 600;
+  font-size: 12px;
+  z-index: 3;
+  text-shadow: 0 1px 5px #fff;
+  pointer-events: none;
+}
+.runner-stage.collision {
+  outline: 3px solid #c97756;
+  outline-offset: -3px;
+}
+.runner-session {
+  border-top: 1px solid #edf0e5;
+  padding: 10px 16px;
+  font-size: 8px;
+  color: #8b997d;
+  background: #fafcf7;
+}
+.game-results {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #172c21ed;
+  color: #e9f2dd;
+  z-index: 5;
+  text-align: center;
+  padding: 18px;
+}
+.game-results > span {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #b7d18f;
+}
+.game-results h3 {
+  font-size: 21px;
+  margin: 12px 0 4px;
+}
+.game-results > strong {
+  font-size: 46px;
+  font-weight: 550;
+  color: #d6f65c;
+  font-variant-numeric: tabular-nums;
+}
+.game-results p {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #bdcdb4;
+}
+.game-results .button {
+  margin-top: 10px;
+}
+.runner-panel.focused {
+  position: fixed;
+  inset: 12px;
+  z-index: 20;
+  box-shadow: 0 0 0 30px #102217dd;
+  overflow: auto;
+}
+.runner-panel.focused .runner-stage {
+  height: calc(100dvh - 210px);
+  min-height: 280px;
+}
+.runner-panel.focused .runner-hud {
+  max-width: 660px;
+  margin: auto;
+}
+.runner-panel.focused .game-message {
+  max-width: 550px;
+  margin: auto;
+}
+@media (max-width: 760px) {
+  .runner-panel .runner-stage {
+    height: 330px;
+  }
+  .runner-panel.focused {
+    inset: 5px;
+  }
+  .runner-panel.focused .runner-stage {
+    height: calc(100dvh - 255px);
+  }
+  .runner-panel .runner-toolbar select {
+    flex: 1;
+    min-width: 110px;
+  }
+  .runner-panel #playRunner {
+    margin-left: 0;
+  }
+  .runner-hud {
+    padding: 9px;
+  }
+  .runner-hud b {
+    font-size: 14px;
+  }
+  .runner-panel .panel-heading {
+    gap: 6px;
+  }
+  .runner-panel .panel-heading > .button {
+    font-size: 8px;
+  }
+  .game-message {
+    font-size: 13px;
+    inset: 48% 8% auto;
+  }
+}
