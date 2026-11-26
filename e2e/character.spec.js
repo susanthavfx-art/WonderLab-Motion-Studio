@@ -94,7 +94,7 @@ test("GLB character animates embedded clips, freezes on pause and persists with 
   await expect(
     page
       .locator("#assetList")
-      .getByRole("button", { name: "Use as character" }),
+      .getByRole("button", { name: "Use as character", exact: true }),
   ).toBeVisible();
   await expect(
     page.locator("#assetList").getByRole("button", { name: "Use as logo" }),
@@ -121,7 +121,7 @@ test("GLB character animates embedded clips, freezes on pause and persists with 
   );
   await page
     .locator("#assetList")
-    .getByRole("button", { name: "Use as character" })
+    .getByRole("button", { name: "Use as character", exact: true })
     .click();
   await expect(page.locator("#characterStatus")).toContainText(
     "4 animation clips",
@@ -165,7 +165,7 @@ test("library rejects external GLB resources before requests and accepts static 
   await expect(page.locator("#assetList .studio-row")).toHaveCount(1);
   await page
     .locator("#assetList")
-    .getByRole("button", { name: "Use as character" })
+    .getByRole("button", { name: "Use as character", exact: true })
     .click();
   await expect(page.locator("#characterStatus")).toContainText("Static model");
   await page.locator('[data-close="assetsDialog"]').click();
