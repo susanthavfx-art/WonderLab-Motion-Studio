@@ -1,3 +1,4 @@
+import { HandsUpJump } from "./hands-up-jump.js";
 export const defaults = {
   lean: 0.15,
   squat: 0.22,
@@ -57,6 +58,7 @@ export const neutralActions = () => ({
 });
 export class MotionEngine {
   constructor() {
+    this.handsUp = new HandsUpJump();
     this.thresholds = { ...defaults };
     this.profile = null;
     this.samples = null;
@@ -68,7 +70,7 @@ export class MotionEngine {
     this.lastSide = -1;
     this.lastStep = -Infinity;
     this.lastSwing = -Infinity;
-    this.airborne = false;
+    this.handsUp.reset();
     this.squatting = false;
     this.lastTime = null;
     this.actions = neutralActions();
@@ -154,20 +156,8 @@ export class MotionEngine {
     this.squatting =
       drop > (this.squatting ? t.squat * 0.6 : t.squat) &&
       kneeCompression > 0.06;
-    const feetLift = (b.ankle - Math.max(p[27].y, p[28].y)) / b.scale;
-    const hipLift = (b.hip - f.hip) / b.scale;
-    let jump = false,
-      swing = false;
-    if (
-      !this.airborne &&
-      feetLift > t.jump &&
-      hipLift > t.jump &&
-      !this.squatting
-    ) {
-      jump = true;
-      this.airborne = true;
-    }
-    if (feetLift < t.jump * 0.3) this.airborne = false;
+    const jump = this.handsUp.update(p, now, b.scale, t.jump, this.squatting);
+    let swing = false;
     if (
       this.previous &&
       dt > 0.008 &&
@@ -196,7 +186,6 @@ export class MotionEngine {
     const lifts = b.knee.map((v, i) => (v - f.knee[i]) / b.scale);
     const side = lifts[0] > lifts[1] ? 0 : 1;
     if (
-      !this.airborne &&
       !this.squatting &&
       lifts[side] > t.step &&
       lifts[1 - side] < t.step * 0.65 &&
@@ -215,7 +204,7 @@ export class MotionEngine {
             240,
             ((this.steps.length - 1) * 60000) /
               Math.max(250, this.steps.at(-1) - this.steps[0]),
-          ) * clamp(1 - age / 1000, 0, 1)
+          ) * clamp(1 - Math.max(0, age - 450) / 900, 0, 1)
         : 0;
     this.previous = p.map((v) => ({ ...v }));
     this.actions = {
@@ -224,7 +213,7 @@ export class MotionEngine {
       jump,
       swing,
       cadence,
-      intensity: clamp(cadence / 150, 0, 1),
+      intensity: clamp(cadence / 120, 0, 1),
       valid: true,
     };
     return { q, actions: this.actions, progress: 1 };

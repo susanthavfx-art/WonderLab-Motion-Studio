@@ -59,6 +59,8 @@ export class RunnerGame {
     this.feedbackTime = 0;
     this.accumulator = 0;
     this.pendingJump = false;
+    this.jumpCarrySpeed = 0;
+    this.jumpCarryTime = 0;
   }
   start() {
     if (this.state === "ready" || this.state === "paused") {
@@ -110,7 +112,13 @@ export class RunnerGame {
     else if (Math.abs(lean) < 0.18) this.lane = 0;
     const target = this.lane * 2.2;
     this.x += clamp(target - this.x, -dt * 10, dt * 10);
-    if (this.pendingJump && this.jumpTime < 0 && !a.squat) this.jumpTime = 0;
+    if (this.pendingJump && this.jumpTime < 0 && !a.squat) {
+      this.jumpTime = 0;
+      // Let players interrupt their steps for the hands-up gesture. Never
+      // create forward speed from an idle jump, or carry through tracking loss.
+      this.jumpCarrySpeed = this.speed;
+      this.jumpCarryTime = 1.05;
+    }
     this.pendingJump = false;
     if (this.jumpTime >= 0) {
       this.jumpTime += dt;
@@ -121,7 +129,14 @@ export class RunnerGame {
     this.squat = !!a.squat && this.height < 0.15;
     const max = LEVELS[this.difficulty].speed;
     const intensity = clamp(Number(a.intensity) || 0, 0, 1);
-    const targetSpeed = this.mode === "auto" ? max : intensity * max;
+    this.jumpCarryTime = Math.max(0, this.jumpCarryTime - dt);
+    const targetSpeed =
+      this.mode === "auto"
+        ? max
+        : Math.max(
+            intensity * max,
+            this.jumpCarryTime > 0 ? this.jumpCarrySpeed : 0,
+          );
     this.speed += clamp(targetSpeed - this.speed, -dt * max * 2, dt * max * 2);
     this.distance += this.speed * dt;
     this.time = Math.min(this.duration, this.time + dt);

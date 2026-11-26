@@ -164,3 +164,22 @@ test("simulation agrees across 30, 60 and 120 render FPS", () => {
     assert.equal(g.score, results[0].score);
   }
 });
+
+test("mode A keeps existing momentum across a gesture jump then stops", () => {
+  const g = running({ mode: "steps", course: [] });
+  advance(g, 1);
+  const speed = g.speed;
+  g.update(1 / 120, { ...neutral, intensity: 0, jump: true });
+  advance(g, 0.9, { ...neutral, intensity: 0 });
+  assert.ok(g.speed >= speed - 0.01);
+  advance(g, 1, { ...neutral, intensity: 0 });
+  assert.equal(g.speed, 0);
+});
+test("jump from idle in mode A never creates forward speed; loss still pauses", () => {
+  const g = running({ mode: "steps", course: [] });
+  g.update(1 / 120, { ...neutral, intensity: 0, jump: true });
+  advance(g, 0.5, { ...neutral, intensity: 0 });
+  assert.equal(g.distance, 0);
+  g.update(1 / 120, { ...neutral, valid: false });
+  assert.equal(g.state, "paused");
+});
