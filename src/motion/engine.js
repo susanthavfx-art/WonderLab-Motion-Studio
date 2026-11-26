@@ -1,7 +1,7 @@
 import { HandsUpJump } from "./hands-up-jump.js";
 import { PhysicalJump } from "./physical-jump.js";
 export const defaults = {
-  lean: 0.15,
+  lean: 0.1,
   squat: 0.22,
   jump: 0.12,
   swing: 2.8,
@@ -153,13 +153,15 @@ export class MotionEngine {
     const dt = this.lastTime === null ? 0 : (now - this.lastTime) / 1000;
     this.lastTime = now;
     const leanRaw = -(f.tilt - b.tilt); // mirrored preview: lean toward screen-right is positive
+    // Keep the neutral dead zone, but avoid requiring an additional large
+    // body bend before the runner crosses its lane-entry hysteresis threshold.
     const target =
       Math.abs(leanRaw) < t.lean
         ? 0
-        : clamp((leanRaw - Math.sign(leanRaw) * t.lean) * 2.5, -1, 1);
+        : clamp((leanRaw - Math.sign(leanRaw) * t.lean) * 5, -1, 1);
     const lean =
       this.actions.lean +
-      (target - this.actions.lean) * (dt ? 1 - Math.exp(-12 * dt) : 1);
+      (target - this.actions.lean) * (dt ? 1 - Math.exp(-18 * dt) : 1);
     const drop = (f.hip - b.hip) / b.scale;
     const kneeCompression =
       (b.knee[0] + b.knee[1] - f.knee[0] - f.knee[1]) / (2 * b.scale);

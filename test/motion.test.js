@@ -1,3 +1,4 @@
+import { RunnerGame } from "../src/runner-game.js";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MotionEngine, quality, neutralActions } from "../src/motion/engine.js";
@@ -214,4 +215,70 @@ test("jump selection isolates detectors and resets pending gesture while retaini
   e.setJumpMode("hands");
   assert.equal(e.update(air, 2850).actions.jump, false);
   assert.throws(() => e.setJumpMode("both"), /Unknown/);
+});
+
+test("modest mirrored leans reach lanes promptly at 15/30/60 Hz, including saved sensitivity", () => {
+  for (const fps of [15, 30, 60])
+    for (const threshold of [0.1, 0.15])
+      for (const direction of [-1, 1]) {
+        const e = calibrated();
+        e.thresholds.lean = threshold;
+        const g = new RunnerGame();
+        g.reset({ course: [] });
+        g.start();
+        for (let i = 0; i < 360; i++)
+          g.update(1 / 120, { ...neutralActions(), valid: true });
+        const p = pose(),
+          shift = threshold === 0.1 ? 0.05 : 0.06;
+        p[11].x -= direction * shift;
+        p[12].x -= direction * shift;
+        let now = 2100,
+          entered = null;
+        for (let i = 0; i < Math.ceil(0.4 * fps); i++) {
+          now += 1000 / fps;
+          g.update(1 / fps, e.update(p, now).actions);
+          if (g.lane === direction && entered === null) entered = (i + 1) / fps;
+        }
+        assert.ok(
+          entered !== null && entered <= 0.2,
+          `lane entry ${entered}s at ${fps}Hz, deadzone ${threshold}`,
+        );
+        assert.ok(
+          Math.abs(g.x - direction * 2.2) < 0.02,
+          "bounded lane travel completes promptly",
+        );
+        for (let i = 0; i < Math.ceil(0.5 * fps); i++) {
+          now += 1000 / fps;
+          g.update(1 / fps, e.update(pose(), now).actions);
+        }
+        assert.equal(g.lane, 0);
+        assert.equal(g.x, 0);
+      }
+});
+test("small running-like torso sway and brief lean spikes do not select a lane", () => {
+  const e = calibrated();
+  const g = new RunnerGame();
+  g.reset({ course: [] });
+  g.start();
+  for (let i = 0; i < 360; i++)
+    g.update(1 / 120, { ...neutralActions(), valid: true });
+  let now = 2100;
+  for (let i = 0; i < 300; i++) {
+    const p = pose(),
+      shift = Math.sin(i * 0.7) * 0.03;
+    p[11].x += shift;
+    p[12].x += shift;
+    now += 1000 / 60;
+    g.update(1 / 60, e.update(p, now).actions);
+    assert.equal(g.lane, 0);
+  }
+  e.reset();
+  const p = pose();
+  p[11].x -= 0.05;
+  p[12].x -= 0.05;
+  for (let i = 0; i < 30; i++) {
+    now += 1000 / 60;
+    g.update(1 / 60, e.update(i === 1 ? p : pose(), now).actions);
+    assert.equal(g.lane, 0);
+  }
 });

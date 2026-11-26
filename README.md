@@ -52,7 +52,7 @@ This first vertical slice uses Vite + plain ES modules + Three.js, with pure mot
 
 ## Verification and honest limitations
 
-- `npm test`: **56/56 tests passed**: 6 GLB/character lifecycle, animation, backward-compatibility and typed-storage tests, 3 project schema/IndexedDB tests, 3 branding validation/resource-lifecycle tests, 6 hands-free readiness/safety tests, 3 hands-up detector tests, 3 physical-jump tests, 18 motion integration tests plus 14 runner tests (seeded fair spacing, countdown, modes A/B, lane transitions, one-shot collisions/pickups, jump/duck rules, pause/reacquisition, results/reset and 30/60/120 FPS agreement).
+- `npm test`: **58/58 tests passed**: 6 GLB/character lifecycle, animation, backward-compatibility and typed-storage tests, 3 project schema/IndexedDB tests, 3 branding validation/resource-lifecycle tests, 6 hands-free readiness/safety tests, 3 hands-up detector tests, 3 physical-jump tests, 20 motion integration tests plus 14 runner tests (seeded fair spacing, countdown, modes A/B, lane transitions, one-shot collisions/pickups, jump/duck rules, pause/reacquisition, results/reset and 30/60/120 FPS agreement).
 - `npm run build`: passed. A bundle-size advisory remains for the Three.js-containing application bundle; runtime pose WASM/models add approximately 18 MB before compression. No CDN is required, but this is not an offline-cached app.
 - Headless Chromium smoke checks: rendered WebGL playground, keyboard lean/run/jump, guide, calibration guard, sensitivity reset, source switching, simulated camera permission denial/retry and 390px layout without horizontal overflow; no uncaught page errors. An initial fixed-100ms browser assertion was timing-sensitive under software WebGL; rerunning with condition-based waits passed.
 - `npm audit` after dependency setup: **0 vulnerabilities**.
@@ -135,7 +135,7 @@ This milestone lays the foundation for a **template-based motion-game studio**, 
 - `src/projects/storage.js`: shared IndexedDB projects/assets, reference-checked saves and deletion protection. `src/projects/editor.js` owns local CRUD dialogs, dirty-state guards, library assignment and hydration coordination. `src/branding.js` owns image validation/object-URL lifetime; stored blobs do not contain temporary URLs.
 - Shared motion modules stay independent of client branding and storage. Additional templates should consume normalized actions, with asset slots and settings validation appropriate to their gameplay.
 
-Browser regression suite: **9 production tests**, including local save/reload/open, settings and image hydration, rename/duplicate/delete, reference protection, invalid library import and template reset, GLB upload, embedded texture decoding, animation action changes/pause, model persistence/library reuse and static/invalid GLB handling, plus the previous runner/camera/hands-free/branding checks. Run `npm run build && npm run test:browser` (install Playwright Chromium or set `CHROMIUM_PATH`).
+Browser regression suite: **10 production tests**, including local save/reload/open, settings and image hydration, rename/duplicate/delete, reference protection, invalid library import and template reset, GLB upload, embedded texture decoding, animation action changes/pause, model persistence/library reuse and static/invalid GLB handling, plus the previous runner/camera/hands-free/branding checks. Run `npm run build && npm run test:browser` (install Playwright Chromium or set `CHROMIUM_PATH`).
 
 
 ## GLB characters and embedded animations
@@ -172,3 +172,12 @@ Open **3D character & animations** above the runner. Upload a `.glb`, or use **A
 Selecting A (Run in place) or B (Auto-run) resets the run and **re-arms hands-free start only when the webcam is ready and Hands-free start is enabled**. Step back into full-body view: the readiness/calibration gate still runs, followed by the full 3–2–1 countdown. Mode A does not require stepping to trigger countdown; stepping controls forward speed after the run starts. Keyboard mode remains manual. Explicit Pause, Reset, Stop, project loading and branding/character edits still disarm auto-start; this mode-selector behaviour does not automatically resume those operations.
 
 The added browser regression covers Auto-run → Run in place, countdown with no steps, explicit pause/reset, camera stopped and hands-free disabled. Validation: 56 unit tests passed; all 9 browser tests passed across the suite and one isolated rerun (the existing brief hands-up ACTIVE-state assertion missed its pulse on the initial suite run). This remains a synthetic camera test, not confirmation on the operator's webcam.
+
+
+### Easier, quicker lean steering
+
+The default Lean dead zone is now **0.10** (previously 0.15). Outside it, normalized lean gain is 5 instead of 2.5, and the smoothing response is 18/s instead of 12/s. Runner lane-entry/return hysteresis and bounded lateral travel are unchanged: smaller torso tilts produce a lane-strength signal sooner without teleporting the character. The tilt is shoulder/hip horizontal offset divided by calibrated torso height; these settings are not physical angle measurements.
+
+Saved projects keep their explicitly saved dead-zone value, including the former 0.15 default, but benefit from the new gain/response. For easier steering in an existing project, set **Lean dead zone → 0.10** and Save project. Raise it again if natural running sway triggers unwanted lane changes. No player calibration is migrated; stand neutral and recalibrate normally.
+
+Synthetic regressions exercise mirrored modest leans at 15/30/60 Hz with both 0.10 and saved 0.15 dead zones, lane entry within 200ms, bounded lane travel, return to centre, small torso sway and brief noise. A production browser test checks modest webcam pose offsets in both directions. Real player running sway/comfort still needs operator validation; these tests do not establish webcam latency or universal accuracy.
