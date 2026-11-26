@@ -20,6 +20,18 @@ npm run preview         # serve the production output
 npm run format:check
 ```
 
+## GitHub Pages deployment
+
+Pages must use **Settings → Pages → Build and deployment → Source: GitHub Actions** (not a raw repository/branch upload).
+
+The `Build and deploy Motion Lab` workflow installs locked dependencies, runs tests and formatting checks, builds Vite, checks the production assets, and uploads **only `dist/`**. Pull requests validate the build without deploying. Merging to `main` automatically deploys to:
+
+https://susanthavfx-art.github.io/WonderLab-Motion-Studio/
+
+Vite uses a relative `base: "./"` so scripts, CSS and MediaPipe runtime assets resolve under the project URL. Serving the source `index.html` directly will not work: browsers cannot compile Vite imports or resolve npm packages. After a deployment succeeds, hard-refresh the site (`Ctrl+Shift+R`) if it still shows a cached blank page. Camera permission remains a separate browser prompt after the UI loads.
+
+Run `npm run build && node scripts/check-build.mjs` to verify compiled HTML, relative entrypoint/style URLs and local pose runtime assets before deployment. GitHub Pages is public hosting, not an authenticated internal workspace; do not publish confidential client assets here.
+
 ## Current milestone: Motion Lab
 
 - On-device MediaPipe Pose lite, same-origin WASM/model assets, explicit webcam enable/stop/retry.
