@@ -1,3 +1,4 @@
+import { mountCharacterEditor } from "./assets/character-editor.js";
 import "./style.css";
 import {
   brandDefaults,
@@ -102,7 +103,7 @@ document.querySelector("#app").innerHTML = `
   )}</div><button class="button dark full" id="calibrate">${icon("Scan")} Calibrate stance</button><div class="calibration-progress"><div id="calibrationProgress"></div></div><small id="calibrationHelp">A stable 2-second stance sets your neutral position.</small></section>
 <section class="panel tips-panel"><div class="tips-title">${icon("Activity")} A better tracking setup</div><ul><li>Step back until your entire body fits.</li><li>Use even lighting and a clear space.</li><li>One person in the camera at a time.</li></ul><div>Start around 2–3 m away; adjust to your camera.</div></section></aside></div>
 <section class="inputs-section"><div class="section-title"><div><h2>Movement inputs <span>05</span></h2><p>Live signals, ready to map to your game.</p></div><span class="signal-label"><span class="dot" id="signalDot"></span><span id="signalText">Waiting for input</span></span></div><div class="movement-grid">${cards.map(([id, title, ic, key]) => `<article class="movement-card" id="card-${id}"><div class="movement-top"><span class="movement-icon">${icon(ic)}</span><span class="input-state" id="state-${id}">IDLE</span></div><h3 id="title-${id}">${title}</h3><div class="input-value" id="value-${id}">${id === "lean" ? "0.00" : id === "run" ? "0" : "—"}<small>${id === "run" ? " steps/min" : id === "lean" ? " neutral" : ""}</small></div><div class="meter"><div id="meter-${id}"></div></div><div class="key-hint"><span>${key}</span><span>${id === "lean" ? "Continuous" : id === "run" ? "Cadence" : id === "squat" ? "Hold" : "Trigger"}</span></div></article>`).join("")}</div></section>
-<section class="panel branding-panel" id="brandingPanel"><div class="panel-heading"><div><h2>${icon("Settings2")} Event branding</h2><span class="section-sub">Make Wonder Run your client’s game. Changes preview live.</span></div><button class="button secondary compact" id="resetBrand">${icon("RotateCcw")} Reset branding</button></div><div class="branding-grid"><div class="branding-identity"><label for="brandTitle">Game title</label><input id="brandTitle" type="text" maxlength="60" value="WONDER RUN" placeholder="Your event game title"><small>Up to 60 characters · plain text</small><div class="brand-colours"><label for="brandPrimary">Primary<input id="brandPrimary" type="color" value="#d6f65c"><output id="primaryHex">#d6f65c</output></label><label for="brandAccent">Accent<input id="brandAccent" type="color" value="#304d3d"><output id="accentHex">#304d3d</output></label><label for="brandBackground">Backdrop<input id="brandBackground" type="color" value="#dfe8db"><output id="backgroundHex">#dfe8db</output></label></div></div><div class="branding-upload"><label for="brandLogo">Company logo</label><div class="brand-asset-preview"><img id="logoPreview" alt="Selected company logo" hidden><span id="logoPlaceholder">Your logo here</span></div><input id="brandLogo" type="file" accept="image/png,image/jpeg,image/webp"><div><small>PNG / JPEG / WebP · max 2 MB</small><button class="text-button" id="removeLogo">Remove logo</button></div></div><div class="branding-upload"><label for="brandBackdrop">Background image</label><div class="brand-asset-preview background-sample" id="backgroundPreview"><img id="backdropPreviewImage" alt="Selected game background" hidden><span id="backgroundPlaceholder">Colour backdrop</span></div><input id="brandBackdrop" type="file" accept="image/png,image/jpeg,image/webp"><div><small>PNG / JPEG / WebP · max 8 MB</small><button class="text-button" id="removeBackdrop">Remove image</button></div></div></div><div class="brand-status"><span id="brandStatus" role="status">Session-only preview · Refresh clears branding. Project save/load comes next.</span><span>Orange blocks, blue bars and gold pickups keep their gameplay colours.</span></div></section>
+<section class="panel branding-panel" id="brandingPanel"><div class="panel-heading"><div><h2>${icon("Settings2")} Event branding</h2><span class="section-sub">Make Wonder Run your client’s game. Changes preview live.</span></div><button class="button secondary compact" id="resetBrand">${icon("RotateCcw")} Reset branding</button></div><div class="branding-grid"><div class="branding-identity"><label for="brandTitle">Game title</label><input id="brandTitle" type="text" maxlength="60" value="WONDER RUN" placeholder="Your event game title"><small>Up to 60 characters · plain text</small><div class="brand-colours"><label for="brandPrimary">Primary<input id="brandPrimary" type="color" value="#d6f65c"><output id="primaryHex">#d6f65c</output></label><label for="brandAccent">Accent<input id="brandAccent" type="color" value="#304d3d"><output id="accentHex">#304d3d</output></label><label for="brandBackground">Backdrop<input id="brandBackground" type="color" value="#dfe8db"><output id="backgroundHex">#dfe8db</output></label></div></div><div class="branding-upload"><label for="brandLogo">Company logo</label><div class="brand-asset-preview"><img id="logoPreview" alt="Selected company logo" hidden><span id="logoPlaceholder">Your logo here</span></div><input id="brandLogo" type="file" accept="image/png,image/jpeg,image/webp"><div><small>PNG / JPEG / WebP · max 2 MB</small><button class="text-button" id="removeLogo">Remove logo</button></div></div><div class="branding-upload"><label for="brandBackdrop">Background image</label><div class="brand-asset-preview background-sample" id="backgroundPreview"><img id="backdropPreviewImage" alt="Selected game background" hidden><span id="backgroundPlaceholder">Colour backdrop</span></div><input id="brandBackdrop" type="file" accept="image/png,image/jpeg,image/webp"><div><small>PNG / JPEG / WebP · max 8 MB</small><button class="text-button" id="removeBackdrop">Remove image</button></div></div></div><div class="brand-status"><span id="brandStatus" role="status">Live preview · Use Save project to keep branding and assigned assets.</span><span>Orange blocks, blue bars and gold pickups keep their gameplay colours.</span></div></section>
 <div class="bottom-grid"><section class="panel runner-panel" id="runnerPanel"><div class="panel-heading"><div><h2>${icon("Play")} <span data-brand-title>WONDER RUN</span></h2><span class="section-sub">Three lanes. Real movement. One minute to make it count.</span></div><button class="button secondary compact" id="expandRunner">${icon("Expand")} Focus view</button></div>
 <div class="runner-playtest-layout"><div class="runner-stage" id="runner"><img class="game-backdrop" id="gameBackdrop" alt="" hidden><div class="runner-label"><img class="game-logo" data-brand-logo alt="Company logo" hidden><span data-brand-title>WONDER RUN</span><small id="runnerSource">WEBCAM · FULL BODY REQUIRED</small></div><span class="runner-state" id="runnerState">READY</span>
 <div class="runner-hud"><span>SCORE <b id="gameScore">0</b></span><span>LIVES <b id="gameLives">♥ ♥ ♥</b></span><span>TIME <b id="gameTime">60s</b></span><span>PICKUPS <b id="gameCoins">0</b></span></div>
@@ -940,12 +941,23 @@ function frame(now) {
                 : "Step back · Show head, hands, knees and feet. Hold still.";
   template.update(dt, a);
   template.render();
+  characterEditor.tick();
   updateGameUI(a);
   updateMonitor(a);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 
+const characterEditor = mountCharacterEditor({
+  view: runner.character,
+  pause: () => {
+    handsFree.disarm();
+    game.pause("Character edited · Re-arm when ready");
+    keys.clear();
+    keyJump = keySwing = false;
+  },
+  changed,
+});
 const studio = mountProjectStudio({
   pause: () => {
     handsFree.disarm();
@@ -956,6 +968,7 @@ const studio = mountProjectStudio({
   capture: () => {
     if (pendingImages)
       throw Error("Wait for image validation to finish, then retry");
+    const character = characterEditor.capture();
     return {
       branding: { ...branding },
       settings: {
@@ -964,14 +977,17 @@ const studio = mountProjectStudio({
         jumpInput: $("jumpInput").value,
         handsFree: $("handsFreeEnabled").checked,
         thresholds: { ...engine.thresholds },
+        character: character.settings,
       },
-      files: { ...brandFiles },
+      files: { ...brandFiles, character: character.file },
     };
   },
   assign: async (slot, file) => {
-    await loadBrandFile(file, slot);
+    if (slot === "character") await characterEditor.load(file);
+    else await loadBrandFile(file, slot);
   },
   apply: async (project, files) => {
+    await characterEditor.load(files.character, project.settings.character);
     stop();
     handsFree.disarm();
     resetMotion();

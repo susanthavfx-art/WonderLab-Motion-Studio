@@ -1,3 +1,7 @@
+import {
+  validateCharacter,
+  defaultCharacter,
+} from "../assets/character-settings.js";
 import { getTemplate } from "../templates/registry.js";
 import { brandDefaults } from "../branding.js";
 import { defaults } from "../motion/engine.js";
@@ -8,6 +12,7 @@ export const defaultSettings = () => ({
   jumpInput: "hands",
   handsFree: true,
   thresholds: { ...defaults },
+  character: defaultCharacter(),
 });
 export function validateProject(p) {
   if (!p || p.schemaVersion !== 1)
@@ -74,6 +79,7 @@ export function validateProject(p) {
       difficulty: s.difficulty,
       jumpInput: s.jumpInput,
       handsFree: s.handsFree,
+      character: validateCharacter(s.character),
       thresholds: Object.fromEntries(
         Object.keys(defaults).map((k) => [k, s.thresholds[k]]),
       ),
@@ -81,6 +87,7 @@ export function validateProject(p) {
     assetRefs: {
       logo: p.assetRefs.logo ?? null,
       background: p.assetRefs.background ?? null,
+      character: p.assetRefs.character ?? null,
     },
     updatedAt: Number.isFinite(p.updatedAt) ? p.updatedAt : Date.now(),
   };
@@ -94,7 +101,7 @@ export function newProject(name = "Untitled client project") {
     templateVersion: 1,
     branding: { ...brandDefaults },
     settings: defaultSettings(),
-    assetRefs: { logo: null, background: null },
+    assetRefs: { logo: null, background: null, character: null },
     updatedAt: Date.now(),
   };
 }

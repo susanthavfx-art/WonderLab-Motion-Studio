@@ -2324,3 +2324,67 @@ dialog p {
     font-size: 12px;
   }
 }
+
+.character-panel {
+  margin: 24px 0;
+  padding: 24px;
+}
+.character-panel p {
+  font-size: 13px;
+  color: #657366;
+  line-height: 1.6;
+}
+.character-panel small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #657366;
+  margin-top: 8px;
+}
+.character-controls,
+.character-mappings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin: 18px 0;
+}
+.character-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  min-width: 120px;
+  max-width: 100%;
+}
+.character-panel input[type="file"] {
+  max-width: 100%;
+  font-size: 12px;
+}
+.character-panel select {
+  max-width: 260px;
+  padding: 8px;
+  border: 1px solid #dce2d5;
+  border-radius: 8px;
+  background: #fff;
+  color: #263b2f;
+}
+.character-mappings > label {
+  flex: 1;
+  min-width: 160px;
+}
+.character-panel input[type="range"] {
+  width: 160px;
+}
+@media (max-width: 600px) {
+  .character-panel {
+    padding: 16px;
+  }
+  .character-controls > * {
+    max-width: 100%;
+  }
+  .character-mappings select {
+    width: 100%;
+    max-width: 100%;
+  }
+}

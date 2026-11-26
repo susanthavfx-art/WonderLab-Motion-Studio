@@ -1,3 +1,5 @@
+import { isModelFile, inspectGlb, GLB_LIMIT } from "../assets/glb.js";
+import { getTemplate } from "../templates/registry.js";
 import { validateProject } from "./schema.js";
 const request = (r) =>
   new Promise((resolve, reject) => {
@@ -69,11 +71,19 @@ export function createStudioStore(name = "wonderlab-studio-v1") {
     async saveProject(value) {
       const p = validateProject(value);
       return run(["projects", "assets"], "readwrite", async (tx) => {
-        for (const id of Object.values(p.assetRefs).filter(Boolean))
-          if (!(await request(tx.objectStore("assets").get(id))))
+        for (const [slot, id] of Object.entries(p.assetRefs)) {
+          if (!id) continue;
+          const asset = await request(tx.objectStore("assets").get(id));
+          if (!asset)
             throw Error(
               "A project asset is missing. Reassign it from the library.",
             );
+          if (
+            asset.kind !==
+            getTemplate(p.templateId).assetSlots.find((s) => s.id === slot).type
+          )
+            throw Error("Wrong asset type for project slot.");
+        }
         await request(tx.objectStore("projects").put(p));
         return p;
       });
@@ -83,20 +93,23 @@ export function createStudioStore(name = "wonderlab-studio-v1") {
         request(tx.objectStore("projects").delete(id)),
       ),
     async putAsset(file) {
+      const model = isModelFile(file);
       if (
         !(file instanceof Blob) ||
         !file.size ||
-        file.size > 8 * 1024 * 1024 ||
-        !["image/png", "image/jpeg", "image/webp"].includes(file.type)
+        file.size > (model ? GLB_LIMIT : 8 * 1024 * 1024) ||
+        (!model &&
+          !["image/png", "image/jpeg", "image/webp"].includes(file.type))
       )
         throw Error(
-          "Library supports PNG/JPEG/WebP images up to 8 MB in this milestone.",
+          "Library supports PNG/JPEG/WebP up to 8 MB or self-contained GLB up to 20 MB.",
         );
+      if (model) inspectGlb(await file.arrayBuffer());
       const asset = {
         id: crypto.randomUUID(),
         name: String(file.name || "Image").slice(0, 120),
-        kind: "image",
-        type: file.type,
+        kind: model ? "model" : "image",
+        type: model ? "model/gltf-binary" : file.type,
         size: file.size,
         createdAt: Date.now(),
         blob: file,
