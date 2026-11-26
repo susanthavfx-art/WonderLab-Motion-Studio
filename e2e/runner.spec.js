@@ -188,6 +188,7 @@ async function mockPoseCamera(page) {
       setOptions(){} onResults(cb){this.cb=cb;} async initialize(){} async close(){}
       async send(){if(window.poseVisible===false){this.cb({poseLandmarks:null});return;}const p=Array.from({length:33},()=>({x:.5,y:.4,visibility:.99}));
         for(const [i,x,y] of [[0,.5,.1],[11,.4,.3],[12,.6,.3],[13,.35,.4],[14,.65,.4],[15,.3,.5],[16,.7,.5],[23,.43,.55],[24,.57,.55],[25,.43,.73],[26,.57,.73],[27,.43,.92],[28,.57,.92]])Object.assign(p[i],{x,y});
+        if(window.shoulderShift){p[11].x+=window.shoulderShift;p[12].x+=window.shoulderShift;}
         if(window.handsRaised){p[15].y=.23;p[16].y=.23;}
         if(window.bodyLift){for(const point of p)point.y-=.06;}
         this.cb({poseLandmarks:p});}
@@ -298,6 +299,42 @@ test("webcam mode switch re-arms countdown for run-in-place without steps; reset
   await page.locator("#handsFreeEnabled").uncheck();
   await page.locator("#runMode").selectOption("steps");
   await expect(page.locator("#playRunner")).not.toHaveText("Cancel auto-start");
+});
+
+test("modest webcam lean produces a lane-strength signal in both directions", async ({
+  page,
+}) => {
+  await mockPoseCamera(page);
+  await page.goto("/");
+  await page.locator("#monitorEnable").click();
+  await expect(page.locator("#runnerState")).toHaveText("RUNNING", {
+    timeout: 15000,
+  });
+  await page.evaluate(() => {
+    window.shoulderShift = -0.05;
+  });
+  await expect
+    .poll(async () =>
+      parseFloat(await page.locator("#value-lean").textContent()),
+    )
+    .toBeGreaterThan(0.35);
+  await page.evaluate(() => {
+    window.shoulderShift = 0.05;
+  });
+  await expect
+    .poll(async () =>
+      parseFloat(await page.locator("#value-lean").textContent()),
+    )
+    .toBeLessThan(-0.35);
+  await page.evaluate(() => {
+    window.shoulderShift = 0;
+  });
+  await expect
+    .poll(async () =>
+      Math.abs(parseFloat(await page.locator("#value-lean").textContent())),
+    )
+    .toBeLessThan(0.1);
+  await page.locator("#monitorStop").click();
 });
 
 test("branding previews safe text, colours, raster images, replacement, focus and reset", async ({
