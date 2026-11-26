@@ -1,3 +1,9 @@
+import {
+  isModelFile,
+  loadGlb,
+  disposeModel,
+  inspectGlb,
+} from "../assets/glb.js";
 import { createStudioStore } from "./storage.js";
 import { newProject, validateProject } from "./schema.js";
 import { listTemplates } from "../templates/registry.js";
@@ -15,7 +21,7 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
   bar.innerHTML = `<div><label for="projectName">CLIENT PROJECT</label><input id="projectName" maxlength="80" value="Untitled client project" aria-label="Project name"><small id="projectState">Unsaved project · Local browser only</small></div><div class="project-actions"><button class="button secondary" id="newProject">New</button><button class="button dark" id="saveProject">Save project</button><button class="button secondary" id="openProjects">Open projects</button><button class="button secondary" id="openAssets">Asset Library</button></div>`;
   document.querySelector(".lab-banner").before(bar);
   const dialogs = document.createElement("div");
-  dialogs.innerHTML = `<dialog id="projectsDialog"><div class="dialog-heading"><h2>Client projects</h2><button data-close="projectsDialog" class="icon-button" aria-label="Close projects">✕</button></div><p>Saved in this browser on this site only. Clearing site data deletes projects and assets. This is not a backup.</p><div id="projectList" class="studio-list"></div></dialog><dialog id="assetsDialog"><div class="dialog-heading"><h2>Shared Asset Library</h2><button data-close="assetsDialog" class="icon-button" aria-label="Close asset library">✕</button></div><p>Reusable image assets for any registered template. This milestone supports logo/background PNG, JPEG and WebP; GLB, animation and audio support comes next.</p><label class="library-upload">Import image<input id="libraryFile" type="file" accept="image/png,image/jpeg,image/webp"></label><small>Up to 8 MB · 4096 px per side · 16 MP. Logo assignment is limited to 2 MB.</small><div id="assetList" class="studio-list"></div></dialog><dialog id="templatesDialog"><div class="dialog-heading"><h2>Game templates</h2><button data-close="templatesDialog" class="icon-button" aria-label="Close templates">✕</button></div><p>Templates own their rules, input actions and asset slots. Runner is the first registered template, not the only kind of game planned.</p><div id="templateList" class="studio-list"></div></dialog><div id="studioStatus" class="studio-status" role="status" hidden></div>`;
+  dialogs.innerHTML = `<dialog id="projectsDialog"><div class="dialog-heading"><h2>Client projects</h2><button data-close="projectsDialog" class="icon-button" aria-label="Close projects">✕</button></div><p>Saved in this browser on this site only. Clearing site data deletes projects and assets. This is not a backup.</p><div id="projectList" class="studio-list"></div></dialog><dialog id="assetsDialog"><div class="dialog-heading"><h2>Shared Asset Library</h2><button data-close="assetsDialog" class="icon-button" aria-label="Close asset library">✕</button></div><p>Reusable images and GLB characters for registered template slots. GLB clips map to gameplay actions in the character panel. Audio and 3D environment slots are not yet supported.</p><label class="library-upload">Import image or GLB<input id="libraryFile" type="file" accept="image/png,image/jpeg,image/webp,.glb,model/gltf-binary"></label><small>Images: 8 MB, 4096 px, 16 MP (logos: 2 MB). Self-contained GLB: 20 MB.</small><div id="assetList" class="studio-list"></div></dialog><dialog id="templatesDialog"><div class="dialog-heading"><h2>Game templates</h2><button data-close="templatesDialog" class="icon-button" aria-label="Close templates">✕</button></div><p>Templates own their rules, input actions and asset slots. Runner is the first registered template, not the only kind of game planned.</p><div id="templateList" class="studio-list"></div></dialog><div id="studioStatus" class="studio-status" role="status" hidden></div>`;
   document.body.append(dialogs);
   const $ = (id) => document.getElementById(id);
   const message = (text) => {
@@ -87,12 +93,13 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
     value.assetRefs = {
       logo: await ensureAsset(files.logo),
       background: await ensureAsset(files.background),
+      character: await ensureAsset(files.character),
     };
     current = { ...(await store.saveProject(value)), saved: true };
     dirty = false;
     $("projectName").value = current.name;
     message(
-      `Saved “${current.name}” locally with its branding, settings and image assets.`,
+      `Saved “${current.name}” locally with its branding, settings and assets.`,
     );
   }
   async function verifyFiles(files) {
@@ -102,14 +109,17 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
     );
     try {
       for (const [slot, file] of Object.entries(files))
-        if (file) await validator.load(file, slot);
+        if (file) {
+          if (slot === "character") inspectGlb(await file.arrayBuffer());
+          else await validator.load(file, slot);
+        }
     } finally {
       validator.dispose();
     }
   }
   async function activate(project, saved) {
     const value = validateProject(project),
-      files = { logo: null, background: null };
+      files = { logo: null, background: null, character: null };
     for (const [slot, id] of Object.entries(value.assetRefs))
       if (id) {
         const a = await store.getAsset(id);
@@ -215,7 +225,9 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
         a.name,
         `${a.kind} · ${a.type} · ${(a.size / 1024).toFixed(0)} KB`,
       );
-      for (const slot of ["logo", "background"])
+      for (const slot of a.kind === "model"
+        ? ["character"]
+        : ["logo", "background"])
         actions.append(
           button(`Use as ${slot}`, async () => {
             const asset = await store.getAsset(a.id),
@@ -236,7 +248,7 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
             )
           )
             throw Error(
-              "Asset is assigned in the current editor. Remove it from branding first.",
+              "Asset is assigned in the current editor. Remove its assignment in the editor first.",
             );
           if (!confirm(`Delete library asset “${a.name}”?`)) return;
           await store.deleteAsset(a.id);
@@ -282,10 +294,13 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
     const file = e.target.files?.[0];
     if (!file) return;
     operate(async () => {
-      await verifyFiles({ background: file });
+      if (isModelFile(file)) {
+        const model = await loadGlb(file);
+        disposeModel(model);
+      } else await verifyFiles({ background: file });
       await store.putAsset(file);
       await library();
-      message("Image imported into the shared local library.");
+      message("Asset imported into the shared local library.");
     }).finally(() => (e.target.value = ""));
   };
   dialogs

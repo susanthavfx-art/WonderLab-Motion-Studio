@@ -1,3 +1,4 @@
+import { createCharacterView } from "./assets/character-view.js";
 import * as T from "three";
 // Renderer only: all gameplay, scoring and timing live in runner-game.js.
 export function createRunner(host) {
@@ -70,9 +71,11 @@ export function createRunner(host) {
     ],
     coin: box(0.42, 0.42, 0.18, "#edc649", 0, 1, -30),
   }));
+  const character = createCharacterView(scene);
   let width = 0,
     height = 0;
   return {
+    character,
     setBrand(brand) {
       body.material.color.set(brand.primary);
       arms.forEach((m) => m.material.color.set(brand.accent));
@@ -92,7 +95,7 @@ export function createRunner(host) {
       }
       avatar.position.set(game.x, game.height, 0);
       avatar.scale.y = game.squat ? 0.58 : 1;
-      avatar.visible = game.lives > 0;
+      avatar.visible = !character.draw(game) && game.lives > 0;
       body.rotation.z = -(game.lane * 2.2 - game.x) * 0.04;
       const phase = game.distance * 2;
       legs.forEach(
@@ -130,6 +133,7 @@ export function createRunner(host) {
       renderer.render(scene, camera);
     },
     dispose() {
+      character.dispose();
       scene.traverse((o) => {
         o.geometry?.dispose();
         if (o.material) o.material.dispose();

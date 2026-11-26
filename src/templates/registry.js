@@ -9,6 +9,7 @@ export const runnerTemplate = Object.freeze({
   assetSlots: [
     { id: "logo", type: "image", label: "Company logo" },
     { id: "background", type: "image", label: "Backdrop" },
+    { id: "character", type: "model", label: "GLB character" },
   ],
   create(host) {
     const game = new RunnerGame();

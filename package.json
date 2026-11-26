@@ -8,8 +8,8 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test",
-    "format": "prettier --write src test e2e index.html vite.config.js playwright.config.js",
-    "format:check": "prettier --check src test e2e index.html vite.config.js playwright.config.js",
+    "format": "prettier --write src test e2e fixtures index.html vite.config.js playwright.config.js",
+    "format:check": "prettier --check src test e2e fixtures index.html vite.config.js playwright.config.js",
     "test:browser": "playwright test"
   },
   "dependencies": {
