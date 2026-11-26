@@ -8,8 +8,9 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node --test",
-    "format": "prettier --write src test index.html vite.config.js",
-    "format:check": "prettier --check src test index.html vite.config.js"
+    "format": "prettier --write src test e2e index.html vite.config.js playwright.config.js",
+    "format:check": "prettier --check src test e2e index.html vite.config.js playwright.config.js",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "@mediapipe/pose": "0.5.1675469404",
@@ -18,6 +19,7 @@
     "vite": "6.4.6"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.1",
     "prettier": "3.6.2"
   }
 }

@@ -1,5 +1,5 @@
 import * as T from "three";
-// Small input visualizer, not the scored runner template. No game logic depends on webcam internals.
+// Renderer only: all gameplay, scoring and timing live in runner-game.js.
 export function createRunner(host) {
   let renderer;
   try {
@@ -13,7 +13,7 @@ export function createRunner(host) {
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   host.append(renderer.domElement);
   const scene = new T.Scene();
-  scene.fog = new T.Fog("#dfe8db", 14, 48);
+  scene.fog = new T.Fog("#dfe8db", 28, 65);
   const camera = new T.PerspectiveCamera(45, 1, 0.1, 70);
   camera.position.set(0, 5, 9);
   camera.lookAt(0, 1, -8);
@@ -58,12 +58,19 @@ export function createRunner(host) {
     part(0.16, 0.6, 0.2, "#78974c", -0.4, 1.15, 0),
     part(0.16, 0.6, 0.2, "#78974c", 0.4, 1.15, 0),
   ];
+  const obstacles = Array.from({ length: 5 }, () => ({
+    block: box(1.35, 0.8, 0.8, "#db855d", 0, 0.4, -30),
+    bar: box(1.8, 0.25, 0.6, "#658cac", 0, 1.55, -30),
+    posts: [
+      box(0.12, 1.8, 0.12, "#819588", 0, 0.9, -30),
+      box(0.12, 1.8, 0.12, "#819588", 0, 0.9, -30),
+    ],
+    coin: box(0.42, 0.42, 0.18, "#edc649", 0, 1, -30),
+  }));
   let width = 0,
-    height = 0,
-    jumpTime = -1,
-    phase = 0;
+    height = 0;
   return {
-    draw(dt, a, mode, active) {
+    draw(game) {
       const r = host.getBoundingClientRect();
       if (r.width !== width || r.height !== height) {
         width = r.width;
@@ -72,33 +79,43 @@ export function createRunner(host) {
         camera.aspect = width / Math.max(1, height);
         camera.updateProjectionMatrix();
       }
-      const speed = active ? (mode === "auto" ? 7 : a.intensity * 9) : 0;
-      if (active && a.jump && jumpTime < 0) jumpTime = 0;
-      if (active && jumpTime >= 0) {
-        jumpTime += dt;
-        if (jumpTime > 0.85) jumpTime = -1;
-      }
-      phase += dt * speed * 2;
-      avatar.position.x +=
-        (a.lean * 2.2 - avatar.position.x) * Math.min(1, dt * 12);
-      avatar.position.y =
-        jumpTime >= 0 ? Math.sin((jumpTime / 0.85) * Math.PI) * 1.7 : 0;
-      avatar.scale.y = a.squat ? 0.62 : 1;
-      body.rotation.z = -a.lean * 0.08;
+      avatar.position.set(game.x, game.height, 0);
+      avatar.scale.y = game.squat ? 0.58 : 1;
+      avatar.visible = game.lives > 0;
+      body.rotation.z = -(game.lane * 2.2 - game.x) * 0.04;
+      const phase = game.distance * 2;
       legs.forEach(
         (m, i) =>
           (m.rotation.x =
-            Math.sin(phase + i * Math.PI) * Math.min(0.8, speed * 0.12)),
+            Math.sin(phase + i * Math.PI) * Math.min(0.8, game.speed * 0.12)),
       );
       arms.forEach(
         (m, i) =>
           (m.rotation.x =
-            Math.sin(phase - i * Math.PI) * Math.min(0.7, speed * 0.1)),
+            Math.sin(phase - i * Math.PI) * Math.min(0.7, game.speed * 0.1)),
       );
-      for (const m of markings) {
-        m.position.z += speed * dt;
-        if (m.position.z > 3) m.position.z -= 48;
-      }
+      markings.forEach(
+        (m, i) =>
+          (m.position.z =
+            3 - ((Math.floor(i / 2) * 3 + 48 - (game.distance % 48)) % 48)),
+      );
+      obstacles.forEach((pool, i) => {
+        const row = game.course[game.nextRow + i];
+        const visible = !!row && row.distance - game.distance < 49;
+        pool.block.visible = visible && row.type === "block";
+        pool.bar.visible = visible && row.type === "bar";
+        pool.posts.forEach((m) => (m.visible = visible && row.type === "bar"));
+        pool.coin.visible = visible;
+        if (!visible) return;
+        const z = game.distance - row.distance;
+        pool.block.position.set(row.lane * 2.2, 0.4, z);
+        pool.bar.position.set(row.lane * 2.2, 1.55, z);
+        pool.posts.forEach((m, j) =>
+          m.position.set(row.lane * 2.2 + (j ? 1 : -1) * 0.86, 0.9, z),
+        );
+        pool.coin.position.set(row.coinLane * 2.2, 1, z);
+        pool.coin.rotation.y = game.distance * 0.1;
+      });
       renderer.render(scene, camera);
     },
     dispose() {

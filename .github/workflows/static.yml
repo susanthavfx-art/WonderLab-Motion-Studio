@@ -35,6 +35,10 @@ jobs:
         run: npm run build
       - name: Verify deployable assets
         run: node scripts/check-build.mjs
+      - name: Install browser for production smoke test
+        run: npx playwright install --with-deps chromium
+      - name: Test playable runner in production build
+        run: npm run test:browser
       - name: Upload built site only
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
