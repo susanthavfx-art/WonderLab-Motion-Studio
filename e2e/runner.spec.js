@@ -258,6 +258,48 @@ test("hands-free camera start calibrates without clicking and cancels safely", a
   await expect(page.locator("#playRunner")).toHaveText("Step back to start");
 });
 
+test("webcam mode switch re-arms countdown for run-in-place without steps; reset and stop stay disarmed", async ({
+  page,
+}) => {
+  await mockPoseCamera(page);
+  await page.goto("/");
+  await page.locator("#monitorEnable").click();
+  await expect(page.locator("#runnerState")).toHaveText("RUNNING", {
+    timeout: 15000,
+  });
+  await page.evaluate(() => {
+    window.poseVisible = false;
+  });
+  await page.locator("#runMode").selectOption("steps");
+  await expect(page.locator("#playRunner")).toHaveText("Cancel auto-start");
+  await expect(page.locator("#runnerState")).toHaveText("READY");
+  await page.evaluate(() => {
+    window.poseVisible = true;
+  });
+  await expect(page.locator("#runnerState")).toHaveText("COUNTDOWN", {
+    timeout: 15000,
+  });
+  await expect(page.locator("#gameScore")).toHaveText("0");
+  await expect(page.locator("#runnerState")).toHaveText("RUNNING", {
+    timeout: 15000,
+  });
+  await expect(page.locator("#gameScore")).toHaveText("0");
+  await expect(page.locator("#gameMessage")).toContainText("Run in place");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#runnerState")).toHaveText("PAUSED");
+  await page.waitForTimeout(900);
+  await expect(page.locator("#runnerState")).toHaveText("PAUSED");
+  await page.locator("#resetRunner").click();
+  await expect(page.locator("#playRunner")).toHaveText("Step back to start");
+  await page.locator("#monitorStop").click();
+  await page.locator("#runMode").selectOption("auto");
+  await expect(page.locator("#playRunner")).toHaveText("Step back to start");
+  await page.locator("#monitorEnable").click();
+  await page.locator("#handsFreeEnabled").uncheck();
+  await page.locator("#runMode").selectOption("steps");
+  await expect(page.locator("#playRunner")).not.toHaveText("Cancel auto-start");
+});
+
 test("branding previews safe text, colours, raster images, replacement, focus and reset", async ({
   page,
 }) => {

@@ -534,7 +534,15 @@ $("jumpInput").onchange = () => {
   );
   document.activeElement?.blur();
 };
-$("runMode").onchange = resetGame;
+$("runMode").onchange = () => {
+  resetGame();
+  // Selecting a mode is an explicit request for a fresh run. Reset must still
+  // disarm everywhere else (Pause, Stop, project hydration and Reset button).
+  if (source === "webcam" && camera?.ready && $("handsFreeEnabled").checked) {
+    handsFree.arm();
+    toast("Mode changed · Step back into full view for the 3–2–1 countdown.");
+  }
+};
 $("runDifficulty").onchange = resetGame;
 $("expandRunner").onclick = () => {
   const expanded = $("runnerPanel").classList.toggle("focused");
