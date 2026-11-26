@@ -5,6 +5,7 @@ test("production runner: camera guard, keyboard modes, pause, reset and focus vi
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
+  await page.locator("#handsFreeEnabled").uncheck();
   await expect(page.locator("h1")).toContainText("Motion Lab");
   await page.locator("#playRunner").click();
   await expect(page.locator("#toast")).toContainText("Calibrate");
@@ -69,34 +70,9 @@ test("game-side camera monitor shares capture, calibration, mirroring and stop i
 }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.addInitScript(() => {
-    window.cameraRequests = 0;
-    navigator.mediaDevices.getUserMedia = async () => {
-      window.cameraRequests++;
-      const canvas = document.createElement("canvas");
-      canvas.width = 640;
-      canvas.height = 480;
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#325c40";
-      ctx.fillRect(0, 0, 640, 480);
-      return canvas.captureStream(15);
-    };
-  });
-  // Exercise the production capture/UI lifecycle, with deterministic synthetic
-  // pose results instead of a real human or network-fetched ML inference.
-  await page.route("**/assets/pose-*.js", (route) =>
-    route.fulfill({
-      contentType: "text/javascript",
-      body: `
-    window.Pose=class {
-      setOptions(){} onResults(cb){this.cb=cb;} async initialize(){} async close(){}
-      async send(){const p=Array.from({length:33},()=>({x:.5,y:.4,visibility:.99}));
-        for(const [i,x,y] of [[0,.5,.1],[11,.4,.3],[12,.6,.3],[13,.35,.4],[14,.65,.4],[15,.3,.5],[16,.7,.5],[23,.43,.55],[24,.57,.55],[25,.43,.73],[26,.57,.73],[27,.43,.92],[28,.57,.92]])Object.assign(p[i],{x,y});
-        this.cb({poseLandmarks:p});}
-    };`,
-    }),
-  );
+  await mockPoseCamera(page);
   await page.goto("/");
+  await page.locator("#handsFreeEnabled").uncheck();
   await page.locator("#expandRunner").click();
   await expect(page.locator("#monitorEnable")).toBeInViewport();
   await page.locator("#monitorEnable").click();
@@ -152,4 +128,97 @@ test("game-side camera monitor shares capture, calibration, mirroring and stop i
     ),
   ).toBe(true);
   expect(errors).toEqual([]);
+});
+
+async function mockPoseCamera(page) {
+  await page.addInitScript(() => {
+    window.cameraRequests = 0;
+    window.poseVisible = true;
+    navigator.mediaDevices.getUserMedia = async () => {
+      window.cameraRequests++;
+      const canvas = document.createElement("canvas");
+      canvas.width = 640;
+      canvas.height = 480;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#325c40";
+      ctx.fillRect(0, 0, 640, 480);
+      return canvas.captureStream(15);
+    };
+  });
+  // Exercise the production capture/UI lifecycle, with deterministic synthetic
+  // pose results instead of a real human or network-fetched ML inference.
+  await page.route("**/assets/pose-*.js", (route) =>
+    route.fulfill({
+      contentType: "text/javascript",
+      body: `
+    window.Pose=class {
+      setOptions(){} onResults(cb){this.cb=cb;} async initialize(){} async close(){}
+      async send(){if(window.poseVisible===false){this.cb({poseLandmarks:null});return;}const p=Array.from({length:33},()=>({x:.5,y:.4,visibility:.99}));
+        for(const [i,x,y] of [[0,.5,.1],[11,.4,.3],[12,.6,.3],[13,.35,.4],[14,.65,.4],[15,.3,.5],[16,.7,.5],[23,.43,.55],[24,.57,.55],[25,.43,.73],[26,.57,.73],[27,.43,.92],[28,.57,.92]])Object.assign(p[i],{x,y});
+        this.cb({poseLandmarks:p});}
+    };`,
+    }),
+  );
+}
+
+test("hands-free camera start calibrates without clicking and cancels safely", async ({
+  page,
+}) => {
+  await mockPoseCamera(page);
+  await page.goto("/");
+  await page.evaluate(() => {
+    window.poseVisible = false;
+  });
+  await page.locator("#expandRunner").click();
+  await page.locator("#monitorEnable").click();
+  await expect(page.locator("#monitorBadge")).toHaveText("LIVE", {
+    timeout: 15000,
+  });
+  await expect(page.locator("#playRunner")).toHaveText("Cancel auto-start");
+  await page.waitForTimeout(800);
+  await expect(page.locator("#runnerState")).toHaveText("READY");
+  // User steps back; no Calibrate or Start click is made.
+  await page.evaluate(() => {
+    window.poseVisible = true;
+  });
+  await expect(page.locator("#runnerState")).toHaveText("COUNTDOWN", {
+    timeout: 15000,
+  });
+  await expect(page.locator("#gameScore")).toHaveText("0");
+  // Losing the body aborts countdown and freezes the world.
+  await page.evaluate(() => {
+    window.poseVisible = false;
+  });
+  await expect(page.locator("#runnerState")).toHaveText("PAUSED");
+  await page.waitForTimeout(600);
+  await expect(page.locator("#gameScore")).toHaveText("0");
+  await page.evaluate(() => {
+    window.poseVisible = true;
+  });
+  await expect(page.locator("#runnerState")).toHaveText("COUNTDOWN", {
+    timeout: 15000,
+  });
+  await expect(page.locator("#runnerState")).toHaveText("RUNNING", {
+    timeout: 15000,
+  });
+  // Explicit operator pause must not auto-resume with the body still in view.
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#runnerState")).toHaveText("PAUSED");
+  await page.waitForTimeout(900);
+  await expect(page.locator("#runnerState")).toHaveText("PAUSED");
+  // Re-arm near computer, then step back; no fresh mouse click at full distance.
+  await page.evaluate(() => {
+    window.poseVisible = false;
+  });
+  await page.locator("#playRunner").click();
+  await expect(page.locator("#playRunner")).toHaveText("Cancel auto-start");
+  await page.evaluate(() => {
+    window.poseVisible = true;
+  });
+  await expect(page.locator("#runnerState")).toHaveText("COUNTDOWN", {
+    timeout: 15000,
+  });
+  await page.locator("#monitorStop").click();
+  await expect(page.locator("#monitorBadge")).toHaveText("CAMERA OFF");
+  await expect(page.locator("#playRunner")).toHaveText("Step back to start");
 });
