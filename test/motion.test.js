@@ -100,7 +100,7 @@ test("squat is held and clears on neutral return", () => {
   assert.equal(e.update(p, 2200).actions.squat, true);
   assert.equal(e.update(pose(), 2250).actions.squat, false);
 });
-test("physical jumps no longer trigger the jump action", () => {
+test("physical lift does not trigger the default hands-up mapping", () => {
   const e = calibrated();
   const p = pose();
   for (const i of [23, 24, 27, 28]) p[i].y -= 0.06;
@@ -191,4 +191,27 @@ test("cadence stays steady between normal steps then decays to zero", () => {
   assert.equal(e.update(pose(), 3000).actions.cadence, speed);
   for (let t = 3100; t <= 4100; t += 100) e.update(pose(), t);
   assert.equal(e.actions.intensity, 0);
+});
+
+test("jump selection isolates detectors and resets pending gesture while retaining calibration", () => {
+  const e = calibrated();
+  const profile = e.profile;
+  e.setJumpMode("physical");
+  assert.equal(e.profile, profile);
+  e.update(pose(), 2200);
+  e.update(pose(), 2400);
+  const hands = pose();
+  hands[15].y = 0.24;
+  hands[16].y = 0.24;
+  assert.equal(e.update(hands, 2450).actions.jump, false);
+  assert.equal(e.update(hands, 2550).actions.jump, false);
+  const air = pose();
+  for (const i of [23, 24, 27, 28]) air[i].y -= 0.06;
+  assert.equal(e.update(air, 2650).actions.jump, true);
+  assert.equal(e.update(air, 2700).actions.jump, false);
+  e.update(null, 2750);
+  assert.equal(e.update(air, 2800).actions.jump, false);
+  e.setJumpMode("hands");
+  assert.equal(e.update(air, 2850).actions.jump, false);
+  assert.throws(() => e.setJumpMode("both"), /Unknown/);
 });

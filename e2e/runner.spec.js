@@ -122,6 +122,31 @@ test("game-side camera monitor shares capture, calibration, mirroring and stop i
   await expect(page.locator("#runnerState")).toHaveText("RUNNING");
   await page.waitForTimeout(700);
   await expect(page.locator("#state-jump")).toHaveText("IDLE");
+  await page.locator("#jumpInput").selectOption("physical");
+  await expect(page.locator("#runnerState")).toHaveText("PAUSED");
+  await expect(page.locator("#title-jump")).toHaveText("Physical jump");
+  await expect(page.locator("#tuneLabel-jump")).toHaveText(
+    "Physical jump lift",
+  );
+  await page.evaluate(() => {
+    window.handsRaised = false;
+  });
+  await page.waitForTimeout(350);
+  await page.locator("#playRunner").click();
+  await expect(page.locator("#runnerState")).toHaveText("RUNNING", {
+    timeout: 15000,
+  });
+  await page.evaluate(() => {
+    window.handsRaised = true;
+  });
+  await page.waitForTimeout(350);
+  await expect(page.locator("#state-jump")).toHaveText("IDLE");
+  await page.evaluate(() => {
+    window.handsRaised = false;
+    window.bodyLift = true;
+  });
+  await expect(page.locator("#state-jump")).toHaveText("ACTIVE");
+  await expect(page.locator("#runnerState")).toHaveText("RUNNING");
   await page.locator("#monitorStop").click();
   await expect(page.locator("#runnerState")).toHaveText("PAUSED");
   await expect(page.locator("#monitorCanvas")).toBeHidden();
@@ -164,6 +189,7 @@ async function mockPoseCamera(page) {
       async send(){if(window.poseVisible===false){this.cb({poseLandmarks:null});return;}const p=Array.from({length:33},()=>({x:.5,y:.4,visibility:.99}));
         for(const [i,x,y] of [[0,.5,.1],[11,.4,.3],[12,.6,.3],[13,.35,.4],[14,.65,.4],[15,.3,.5],[16,.7,.5],[23,.43,.55],[24,.57,.55],[25,.43,.73],[26,.57,.73],[27,.43,.92],[28,.57,.92]])Object.assign(p[i],{x,y});
         if(window.handsRaised){p[15].y=.23;p[16].y=.23;}
+        if(window.bodyLift){for(const point of p)point.y-=.06;}
         this.cb({poseLandmarks:p});}
     };`,
     }),
