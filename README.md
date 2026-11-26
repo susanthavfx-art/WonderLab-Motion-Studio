@@ -39,7 +39,7 @@ Run `npm run build && node scripts/check-build.mjs` to verify compiled HTML, rel
 - Two-second stable full-body calibration. Calibration restarts when required landmarks disappear or stance shifts. Recalibrate after changing player or camera position.
 - Experimental torso lean, wrist swing, squat, jump and alternating-step/cadence estimates, with live cards and session-only sensitivity controls.
 - Keyboard test without webcam: **A/D or arrows** lean, **S/down** squat, **Space** jump, **J** swing, **hold W/up** simulate running. Click outside buttons/inputs to use game keys. Escape, window blur and tab hiding pause the game and clear keys.
-- **Wonder Run playable prototype:** three lanes, orange jump blocks, blue duck-under bars, gold pickups, score, three lives, a 60-second session and results/replay. Select A (run-in-place intensity) / B (auto-run), and Easy/Normal/Hard. Calibrate a visible body or choose Keyboard test, then press Start run. Each start/resume has a 3-second countdown. Lost/stale required tracking pauses time, distance, collisions and score; resume manually after reacquisition. Focus view enlarges the game without browser fullscreen permission.
+- **Wonder Run playable prototype:** three lanes, orange jump blocks, blue duck-under bars, gold pickups, score, three lives, a 60-second session and results/replay. Select A (run-in-place intensity) / B (auto-run), and Easy/Normal/Hard. Hands-free webcam start is on by default: enable the camera near your computer, step back into full view and hold a relaxed stance. After a 600ms visibility hold, neutral calibration collects two stable seconds, then a large 3–2–1 countdown starts the run without another click. Lost/stale required tracking pauses time, distance, collisions and score; while hands-free is armed, full-body reacquisition restarts a complete countdown. Keyboard mode always starts manually. Focus view enlarges the game without browser fullscreen permission.
 - **Game-side webcam monitor:** live uncropped camera + skeleton, torso/hands/feet visibility, calibration progress and camera controls are beside the runner in both normal and Focus views. You can enable/stop the webcam, calibrate/recalibrate or switch to keyboard without scrolling back to the Motion Capture section. The monitor copies the existing video/overlay onto a canvas; it does not open another camera or run another pose detector. Mirror follows the main Mirror setting. On narrow screens the monitor is stacked immediately below the game.
 - Responsive desktop/mobile layout, setup guide and explicit future-feature notices.
 
@@ -51,13 +51,21 @@ This first vertical slice uses Vite + plain ES modules + Three.js, with pure mot
 
 ## Verification and honest limitations
 
-- `npm test`: **26/26 tests passed**: 14 motion tests plus 12 runner tests (seeded fair spacing, countdown, modes A/B, lane transitions, one-shot collisions/pickups, jump/duck rules, pause/reacquisition, results/reset and 30/60/120 FPS agreement).
+- `npm test`: **32/32 tests passed**: 6 hands-free readiness/safety tests, 14 motion tests plus 12 runner tests (seeded fair spacing, countdown, modes A/B, lane transitions, one-shot collisions/pickups, jump/duck rules, pause/reacquisition, results/reset and 30/60/120 FPS agreement).
 - `npm run build`: passed. A bundle-size advisory remains for the Three.js-containing application bundle; runtime pose WASM/models add approximately 18 MB before compression. No CDN is required, but this is not an offline-cached app.
 - Headless Chromium smoke checks: rendered WebGL playground, keyboard lean/run/jump, guide, calibration guard, sensitivity reset, source switching, simulated camera permission denial/retry and 390px layout without horizontal overflow; no uncaught page errors. An initial fixed-100ms browser assertion was timing-sensitive under software WebGL; rerunning with condition-based waits passed.
 - `npm audit` after dependency setup: **0 vulnerabilities**.
 - The operator reported working lean, squat/release, swing, run-in-place and jump on their own webcam setup after the Pages fix. This is a qualitative first-device check, not a measured accuracy benchmark. **The new scored runner still requires webcam playtesting; other players/lighting, event-hardware FPS/latency and endurance have not been validated.** Passing synthetic/browser tests is not proof of those properties. Monocular jump/ground-contact and squat/run discrimination remain experimental. All required body regions currently gate motion together; per-action partial-body support is deferred.
 - Preview mirroring changes display only; it does not silently invert the normalized game direction. Finger-level tracking is not included.
 - No asset licences have been audited for future client distribution; the current runner uses generated geometry, not copied game models or music.
+
+## Hands-free safety and manual testing
+
+- Camera enable arms hands-free when the checkbox is on. Full-body visibility must be fresh; clipped/missing/stale joints reset the hold. Calibration still needs stable neutral samples; movement or pose loss resets calibration progress.
+- During an armed session, tracking loss pauses play and reacquisition starts a new full 3–2–1 countdown. No instantaneous resume. Completed games never automatically replay.
+- Operator Pause, Escape, Cancel auto-start, Stop camera, switching input source, reset/mode/difficulty changes, sensitivity changes, opening the guide and tab/window blur disarm automatic start. The page must be visible and focused, with the guide closed.
+- To resume after an intentional pause/reset, click **Step back to start** while near the computer, then return to your stance. On a finished run the button resets and arms replay. **Cancel auto-start** cancels a pending armed start.
+- Uncheck **Hands-free webcam start** for manual Motion Lab calibration/start. Keyboard controls remain manual. The camera permission prompt always requires your browser's own consent.
 
 ## Runner controls and rules
 
@@ -77,15 +85,15 @@ npm run build
 npm run test:browser
 ```
 
-The two tracked Playwright tests check the built app (not Vite dev mode). The second uses a synthetic camera stream and deterministic pose results to verify simultaneous game/monitor visibility in Focus view, shared single camera capture, canvas pixels, calibration, mirror changes, stopping/pausing and keyboard switching. It is a UI/lifecycle test, not proof of real webcam accuracy. The original test covers: camera calibration guard, keyboard A/B, countdown, jump/lean cards, score progress, Escape/pause freeze, manual resume countdown, guide pause, mode reset, three-life reset, focus view, mobile width and uncaught page errors. Set `CHROMIUM_PATH` to use an existing Chromium executable. CI installs Chromium and runs this smoke test before publishing Pages.
+The three tracked Playwright tests check the built app (not Vite dev mode). The second uses a synthetic camera stream and deterministic pose results to verify simultaneous game/monitor visibility in Focus view, shared single camera capture, canvas pixels, calibration, mirror changes, stopping/pausing and keyboard switching. It is a UI/lifecycle test, not proof of real webcam accuracy. The third test verifies automatic calibration/start without Calibrate/Start clicks, countdown interruption on body loss, full countdown on return, explicit-pause disarming and re-arming from near the computer. The original test covers: camera calibration guard, keyboard A/B, countdown, jump/lean cards, score progress, Escape/pause freeze, manual resume countdown, guide pause, mode reset, three-life reset, focus view, mobile width and uncaught page errors. Set `CHROMIUM_PATH` to use an existing Chromium executable. CI installs Chromium and runs this smoke test before publishing Pages.
 
 ## First real-webcam test
 
 1. Set up clear floor space and even light. Frame head, hands, knees and feet with movement margin; adjust distance to your lens (2–3m is only a starting guide).
-2. Enable webcam, check the three body-region indicators, then calibrate a relaxed stance for two seconds.
+2. Choose mode/difficulty and Focus view first. Leave Hands-free webcam start checked, enable webcam, then step back. Show head, hands, knees and feet; hold still for automatic calibration and the large 3–2–1 countdown. No distant mouse click is needed.
 3. Watch the input cards while testing 10 leans each side, 10 squats, optional small jumps, swings and alternating steps. Note misses/false positives. Never jump if unsafe.
 4. Test both runner modes. In A, stopping steps should decay intensity to zero. In B, character motion should continue only while tracking is valid and playback is started.
-5. Hide a foot, leave view, return, stop/reconnect the camera and switch input sources. Lost tracking must not keep the run progressing.
+5. Hide a foot, leave view and return: the world must freeze on loss, then a fresh full countdown must precede hands-free resumption. Stop/Escape/operator Pause must cancel auto-start, not resume unexpectedly.
 6. Share browser/device, camera framing, threshold values and incorrect detections to tune the runner.
 
 ## Design documents

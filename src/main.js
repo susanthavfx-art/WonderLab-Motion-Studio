@@ -33,6 +33,7 @@ import {
 } from "./motion/engine.js";
 import { createRunner } from "./runner.js";
 import { RunnerGame } from "./runner-game.js";
+import { HandsFreeStart } from "./motion/hands-free.js";
 const icons = {
   FlaskConical,
   Scan,
@@ -100,7 +101,7 @@ document.querySelector("#app").innerHTML = `
 <div class="game-message" id="gameMessage" role="status" aria-live="polite"></div><div class="game-feedback" id="gameFeedback"></div>
 <div class="game-results" id="gameResults" hidden><span>SESSION RESULTS</span><h3 id="resultTitle">Run complete</h3><strong id="resultScore">0</strong><p id="resultDetails"></p><button class="button primary" id="replayRunner">Play again ↗</button></div></div>
 <aside class="runner-monitor" aria-label="Live webcam playtest monitor"><div class="monitor-heading"><strong>${icon("Camera")} Your movement</strong><span id="monitorBadge">CAMERA OFF</span></div><div class="monitor-preview" id="monitorPreview"><canvas id="monitorCanvas" aria-label="Mirrored live webcam and skeleton preview"></canvas><p id="monitorEmpty">Enable webcam to see your full body here while you play.</p></div><p id="monitorStatus" role="status">Enable webcam, then calibrate.</p><div class="monitor-quality" aria-label="Body visibility"><span id="monitor-torso">Torso —</span><span id="monitor-hands">Hands —</span><span id="monitor-legs">Feet —</span></div><div class="monitor-actions"><button class="button dark compact" id="monitorEnable">Enable webcam</button><button class="button secondary compact" id="monitorStop" aria-label="Stop webcam from game view">Stop</button><button class="button primary compact" id="monitorCalibrate">Calibrate stance</button><button class="text-button" id="monitorKeyboard">Use keyboard instead</button></div><small>Same camera · on-device only · no video stored</small></aside></div>
-<div class="runner-toolbar"><select id="runMode" aria-label="Runner mode"><option value="auto">B · Auto-run</option><option value="steps">A · Run in place</option></select><select id="runDifficulty" aria-label="Runner difficulty"><option value="easy">Easy · 6 m/s</option><option value="normal">Normal · 8 m/s</option><option value="hard">Hard · 10 m/s</option></select><button class="button dark compact" id="playRunner">▶ Start run</button><button class="button secondary compact" id="resetRunner">${icon("RotateCcw")} Reset</button></div>
+<div class="handsfree-bar"><label><input type="checkbox" id="handsFreeEnabled" checked> Hands-free webcam start</label><span id="handsFreeStatus" role="status">Enable webcam, then step back. Auto-calibrate → 3–2–1 → run.</span></div><div class="runner-toolbar"><select id="runMode" aria-label="Runner mode"><option value="auto">B · Auto-run</option><option value="steps">A · Run in place</option></select><select id="runDifficulty" aria-label="Runner difficulty"><option value="easy">Easy · 6 m/s</option><option value="normal">Normal · 8 m/s</option><option value="hard">Hard · 10 m/s</option></select><button class="button dark compact" id="playRunner">▶ Start run</button><button class="button secondary compact" id="resetRunner">${icon("RotateCcw")} Reset</button></div>
 <p class="runner-footnote">Lean / A-D: lanes · Space: jump orange blocks · S: duck blue bars · W: run in mode A · Escape: pause. Gold pickups +100; clear a row +50.</p><div class="runner-session" id="gameSession">60-second run · 3 lives · Seed 2026 · Mode changes reset the run</div></section>
 <section class="panel tuning-panel" id="tuningPanel"><div class="small-heading"><h2>${icon("Settings2")} Input sensitivity</h2><button class="text-button" id="resetThresholds">Reset</button></div><p>Starting points, not universal settings. Tune for your camera and player.</p>${[
   ["lean", "Lean dead zone", 0.05, 0.4, 0.01],
@@ -117,7 +118,7 @@ document.querySelector("#app").innerHTML = `
     "",
   )}<div class="tune-note">${icon("ShieldCheck")} Settings apply to this session only.</div></section></div>
 <footer><span><span class="footer-dot"></span> Built for real-world play.</span><span>WonderLab Motion Studio <b>·</b> Motion Lab / 001</span></footer></main></div>
-<dialog id="guideDialog"><div class="dialog-heading"><h2>Your first motion test</h2><button id="closeGuide" class="icon-button" aria-label="Close guide">✕</button></div><ol><li>Allow camera access on this HTTPS page. If embedded-camera permissions are blocked, open the preview in its own tab.</li><li>Frame your head, relaxed hands, knees and feet with room to move. Keep the floor clear.</li><li>Press Calibrate and hold a comfortable, stable stance for two seconds.</li><li>Try lean, squat, small optional jump, hand swing and alternating steps. Detectors are experimental; check false triggers and missed actions.</li><li>Use Keyboard test without a camera: A/D lean, S crouch, Space jump, J swing, hold W to simulate steps. Escape pauses the game. Lean chooses a lane; orange blocks need a jump, blue bars need a squat. Mode A needs W or running in place.</li></ol><p>One player only. No video is stored or uploaded. Stop the camera when finished. Recalibrate for each player or camera position. Avoid jumping if unsafe.</p><button class="button dark full" id="gotIt">Got it, let’s move ${icon("ArrowUpRight")}</button></dialog><div id="toast" role="status"></div>`;
+<dialog id="guideDialog"><div class="dialog-heading"><h2>Your first motion test</h2><button id="closeGuide" class="icon-button" aria-label="Close guide">✕</button></div><ol><li>Allow camera access on this HTTPS page. If embedded-camera permissions are blocked, open the preview in its own tab.</li><li>Frame your head, relaxed hands, knees and feet with room to move. Keep the floor clear.</li><li>Hands-free start is on by default: enable webcam, step back into full view and hold still. Calibration runs automatically, followed by a 3–2–1 countdown. Pause/Escape cancels auto-start; press Step back to start before returning to your stance. Disable Hands-free start for manual Motion Lab tests.</li><li>Try lean, squat, small optional jump, hand swing and alternating steps. Detectors are experimental; check false triggers and missed actions.</li><li>Use Keyboard test without a camera: A/D lean, S crouch, Space jump, J swing, hold W to simulate steps. Escape pauses the game. Lean chooses a lane; orange blocks need a jump, blue bars need a squat. Mode A needs W or running in place.</li></ol><p>One player only. No video is stored or uploaded. Stop the camera when finished. Recalibrate for each player or camera position. Avoid jumping if unsafe.</p><button class="button dark full" id="gotIt">Got it, let’s move ${icon("ArrowUpRight")}</button></dialog><div id="toast" role="status"></div>`;
 const keyboardEmptyMarkup = `<div class="keyboard-visual">${icon("Keyboard")}</div><h3>Your keyboard. Your controller.</h3><p>No camera needed. Test the same game inputs<br>with a few familiar keys.</p><div class="keyboard-map"><span>A / D <small>Lean</small></span><span>W <small>Run</small></span><span>S <small>Squat</small></span><span>Space <small>Jump</small></span><span>J <small>Swing</small></span></div><span class="privacy">SIMULATED INPUTS · NOT WEBCAM TRACKING</span>`;
 const keyboardView = document.createElement("div");
 keyboardView.id = "keyboardView";
@@ -128,6 +129,7 @@ $("cameraStage").append(keyboardView);
 createIcons({ icons });
 const engine = new MotionEngine();
 const game = new RunnerGame();
+const handsFree = new HandsFreeStart();
 const runner = createRunner($("runner"));
 if (runner.error) $("runnerState").textContent = runner.error;
 let camera = null,
@@ -157,6 +159,7 @@ function status(text, live = false) {
   $("statusDot").classList.toggle("live", live);
 }
 function resetMotion() {
+  handsFree.disarm();
   game.pause("Camera or calibration changed · Recalibrate and resume");
   engine.profile = null;
   engine.cancelCalibration();
@@ -235,6 +238,7 @@ async function enable() {
     }
     camera = result;
     resetMotion();
+    if ($("handsFreeEnabled").checked) handsFree.arm();
     camera.video.className = "live-video";
     $("cameraStage").prepend(camera.video);
     $("cameraEmpty").hidden = true;
@@ -277,7 +281,7 @@ $("monitorKeyboard").onclick = () => {
 $("mirror").onchange = () => {
   $("cameraStage").classList.toggle("unmirrored", !$("mirror").checked);
 };
-$("calibrate").onclick = () => {
+function beginCalibration() {
   if (!camera?.ready || !quality(camera.landmarks).full) {
     toast(
       "Show your head, shoulders, hands, knees and feet before calibrating.",
@@ -293,14 +297,22 @@ $("calibrate").onclick = () => {
   $("calibrationHelp").textContent =
     "Hold still. Movement or hidden joints resets the timer.";
   lastLandmarks = null;
+}
+$("calibrate").onclick = () => {
+  if ($("handsFreeEnabled").checked && camera) handsFree.arm();
+  beginCalibration();
 };
 for (const id of Object.keys(defaults))
   $("tune-" + id).oninput = (e) => {
+    handsFree.disarm();
+    game.pause("Sensitivity changed · Re-arm when ready");
     engine.thresholds[id] = Number(e.target.value);
     $("out-" + id).textContent = Number(e.target.value).toFixed(2);
     engine.reset();
   };
 $("resetThresholds").onclick = () => {
+  handsFree.disarm();
+  game.pause("Sensitivity changed · Re-arm when ready");
   engine.thresholds = { ...defaults };
   engine.reset();
   for (const [id, v] of Object.entries(defaults)) {
@@ -310,6 +322,7 @@ $("resetThresholds").onclick = () => {
   toast("Sensitivity reset to starting values.");
 };
 function resetGame() {
+  handsFree.disarm();
   game.reset({
     mode: $("runMode").value,
     difficulty: $("runDifficulty").value,
@@ -324,17 +337,43 @@ function playGame() {
     return;
   }
   if (["running", "countdown"].includes(game.state)) {
+    handsFree.disarm();
     game.pause();
     return;
   }
-  if (source === "webcam" && (!engine.profile || !actions.valid)) {
-    toast("Calibrate a visible full body first, or select Keyboard test.");
+  if (handsFree.armed && !["running", "countdown"].includes(game.state)) {
+    handsFree.disarm();
     return;
   }
   if (game.state === "finished") resetGame();
+  if (source === "webcam" && $("handsFreeEnabled").checked) {
+    handsFree.arm();
+    toast(
+      "Step back into full view. Hold still for calibration and the 3–2–1 countdown.",
+    );
+    document.activeElement?.blur();
+    return;
+  }
+  if (source === "webcam" && (!engine.profile || !actions.valid)) {
+    toast(
+      "Calibrate a visible full body first, or enable Hands-free webcam start.",
+    );
+    return;
+  }
   game.start();
   document.activeElement?.blur();
 }
+$("handsFreeEnabled").onchange = () => {
+  if (!$("handsFreeEnabled").checked) {
+    handsFree.disarm();
+    if (game.state === "countdown") game.pause("Auto-start disabled");
+  } else if (
+    camera &&
+    source === "webcam" &&
+    !["running", "finished"].includes(game.state)
+  )
+    handsFree.arm();
+};
 $("playRunner").onclick = playGame;
 $("resetRunner").onclick = resetGame;
 $("replayRunner").onclick = playGame;
@@ -346,6 +385,7 @@ $("expandRunner").onclick = () => {
   $("runnerPanel").scrollIntoView({ behavior: "smooth", block: "start" });
 };
 const openGuide = () => {
+  handsFree.disarm();
   game.pause("Setup guide open · Resume when ready");
   $("guideDialog").showModal();
 };
@@ -367,6 +407,7 @@ const controlled = (e) =>
   $("guideDialog").open;
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    handsFree.disarm();
     game.pause("Paused · Press Resume when ready");
     keys.clear();
     return;
@@ -381,6 +422,7 @@ window.addEventListener("keydown", (e) => {
 });
 window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 function blur() {
+  handsFree.disarm();
   keys.clear();
   keyJump = keySwing = false;
   game.pause("Paused · Press Resume when ready");
@@ -499,22 +541,33 @@ function updateGameUI(a) {
     : game.state === "countdown"
       ? String(Math.max(1, Math.ceil(game.countdown)))
       : game.state === "ready"
-        ? "Ready? Choose your mode and start."
+        ? handsFree.armed
+          ? "Step back · Full body visible → hold steady → 3–2–1"
+          : "Ready? Choose your mode and start."
         : game.state === "paused"
-          ? game.reason
+          ? handsFree.armed
+            ? "Step back into full view · Countdown will restart"
+            : game.reason
           : game.state === "running" &&
               game.mode === "steps" &&
               game.speed < 0.1
             ? "Run in place or hold W to move"
             : "";
+  $("gameMessage").classList.toggle("counting", game.state === "countdown");
   $("gameFeedback").textContent = game.feedbackTime > 0 ? game.feedback : "";
   $("playRunner").textContent = ["running", "countdown"].includes(game.state)
     ? "Ⅱ Pause"
-    : game.state === "paused"
-      ? "▶ Resume"
-      : game.state === "finished"
-        ? "↻ Play again"
-        : "▶ Start run";
+    : handsFree.armed
+      ? "Cancel auto-start"
+      : source === "webcam" && $("handsFreeEnabled").checked
+        ? game.state === "finished"
+          ? "Step back to replay"
+          : "Step back to start"
+        : game.state === "paused"
+          ? "▶ Resume"
+          : game.state === "finished"
+            ? "↻ Play again"
+            : "▶ Start run";
   $("gameResults").hidden = game.state !== "finished";
   if (game.state === "finished") {
     $("resultTitle").textContent = game.reason;
@@ -694,6 +747,44 @@ function frame(now) {
         ? "Live motion signals"
         : "Waiting for calibrated pose";
   updateCards(a, now);
+  const readyForHandsFree =
+    source === "webcam" &&
+    !!camera?.ready &&
+    now - lastFrameAt < 250 &&
+    quality(camera.landmarks).full;
+  if (handsFree.armed && game.state === "countdown" && !readyForHandsFree)
+    game.pause("Full body tracking interrupted · Countdown will restart");
+  const autoAction = handsFree.update({
+    now,
+    visible: readyForHandsFree,
+    calibrated: !!engine.profile && a.valid,
+    calibrating,
+    state: game.state,
+    allowed:
+      source === "webcam" &&
+      !!camera &&
+      $("handsFreeEnabled").checked &&
+      !runner.error &&
+      !document.hidden &&
+      document.hasFocus() &&
+      !$("guideDialog").open,
+  });
+  if (autoAction === "calibrate") beginCalibration();
+  if (autoAction === "start") game.start();
+  $("handsFreeStatus").textContent =
+    source === "keyboard"
+      ? "Keyboard mode · Manual start"
+      : !$("handsFreeEnabled").checked
+        ? "Manual webcam start"
+        : !handsFree.armed
+          ? "Auto-start off until you enable webcam or press Step back to start"
+          : calibrating
+            ? "Hold still · Calibrating your stance…"
+            : game.state === "countdown"
+              ? "Keep your full body visible · 3–2–1 countdown"
+              : game.state === "running"
+                ? "Hands-free active · Tracking loss pauses, full-body return restarts countdown"
+                : "Step back · Show head, hands, knees and feet. Hold still.";
   game.update(dt, a);
   runner.draw(game);
   updateGameUI(a);
