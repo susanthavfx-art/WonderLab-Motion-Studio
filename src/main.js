@@ -37,8 +37,9 @@ import {
   quality,
   neutralActions,
 } from "./motion/engine.js";
-import { createRunner } from "./runner.js";
-import { RunnerGame } from "./runner-game.js";
+import { createTemplate } from "./templates/registry.js";
+import { mountProjectStudio } from "./projects/editor.js";
+
 import { HandsFreeStart } from "./motion/hands-free.js";
 const icons = {
   FlaskConical,
@@ -76,7 +77,7 @@ const cards = [
 ];
 document.querySelector("#app").innerHTML = `
 <aside class="sidebar"><a class="brand" href="./" aria-label="WonderLab home"><span class="brand-mark">w<span>·</span></span><div>WonderLab<small>MOTION STUDIO</small></div></a>
-<div class="workspace-label">WORKSPACE <span>INTERNAL</span></div><nav><button class="nav-item" id="projectsNav">${icon("LayoutGrid")} Projects <span class="soon">Soon</span></button><button class="nav-item selected" id="labNav">${icon("Scan")} Motion Lab <span class="nav-dot"></span></button><button class="nav-item" id="templatesNav">${icon("FlaskConical")} Game templates <span class="soon">Soon</span></button></nav>
+<div class="workspace-label">WORKSPACE <span>INTERNAL</span></div><nav><button class="nav-item" id="projectsNav">${icon("LayoutGrid")} Projects </button><button class="nav-item selected" id="labNav">${icon("Scan")} Motion Lab <span class="nav-dot"></span></button><button class="nav-item" id="templatesNav">${icon("FlaskConical")} Game templates </button></nav>
 <div class="sidebar-note"><div class="note-orb">${icon("Activity")}</div><h3>Made to move.</h3><p>Turn real-world movement into playful brand experiences.</p><span>YOUR NEXT BIG IDEA STARTS HERE ↗</span></div>
 <button class="nav-item settings-nav" id="setupNav">${icon("Settings2")} Lab settings</button><div class="profile"><span>W</span><div>WonderLab workspace<small>Personal · Local development</small></div></div></aside>
 <div class="shell"><header class="topbar"><div>Workspace ${icon("ChevronRight")} <strong>Motion Lab</strong></div><span class="build-tag"><span></span> Prototype v0.2</span></header>
@@ -123,7 +124,7 @@ document.querySelector("#app").innerHTML = `
   )
   .join(
     "",
-  )}<div class="tune-note">${icon("ShieldCheck")} Settings apply to this session only.</div></section></div>
+  )}<div class="tune-note">${icon("ShieldCheck")} Use Save project to keep settings.</div></section></div>
 <footer><span><span class="footer-dot"></span> Built for real-world play.</span><span>WonderLab Motion Studio <b>·</b> Motion Lab / 001</span></footer></main></div>
 <dialog id="guideDialog"><div class="dialog-heading"><h2>Your first motion test</h2><button id="closeGuide" class="icon-button" aria-label="Close guide">✕</button></div><ol><li>Allow camera access on this HTTPS page. If embedded-camera permissions are blocked, open the preview in its own tab.</li><li>Frame your head, relaxed hands, knees and feet with room to move. Keep the floor clear.</li><li>Hands-free start is on by default: enable webcam, step back into full view and hold still. Calibration runs automatically, followed by a 3–2–1 countdown. Pause/Escape cancels auto-start; press Step back to start before returning to your stance. Disable Hands-free start for manual Motion Lab tests.</li><li>Try lean, squat, both hands just above your shoulders to jump, hand swing and alternating steps. Lower both hands before raising them again. Hands up is the default. Choose Physical jump in the Jump input dropdown for real jumps; keep head, hands and feet in frame and allow landing space. Switching jump input pauses and cancels auto-start. Keyboard Space always works. Detectors are experimental; check false triggers and missed actions.</li><li>Use Keyboard test without a camera: A/D lean, S crouch, Space jump, J swing, hold W to simulate steps. Escape pauses the game. Lean chooses a lane; orange blocks need both hands raised (or Space), blue bars need a squat. Mode A needs W or running in place.</li></ol><p>One player only. No video is stored or uploaded. Stop the camera when finished. Recalibrate for each player or camera position. For hands-up input, keep feet on the floor. Use physical jump only when safe; return to hands-up if framing is unreliable.</p><button class="button dark full" id="gotIt">Got it, let’s move ${icon("ArrowUpRight")}</button></dialog><div id="toast" role="status"></div>`;
 const keyboardEmptyMarkup = `<div class="keyboard-visual">${icon("Keyboard")}</div><h3>Your keyboard. Your controller.</h3><p>No camera needed. Test the same game inputs<br>with a few familiar keys.</p><div class="keyboard-map"><span>A / D <small>Lean</small></span><span>W <small>Run</small></span><span>S <small>Squat</small></span><span>Space <small>Jump</small></span><span>J <small>Swing</small></span></div><span class="privacy">SIMULATED INPUTS · NOT WEBCAM TRACKING</span>`;
@@ -135,13 +136,31 @@ keyboardView.innerHTML = keyboardEmptyMarkup;
 $("cameraStage").append(keyboardView);
 createIcons({ icons });
 const engine = new MotionEngine();
-const game = new RunnerGame();
-game.reset({ difficulty: "normal" });
+const template = createTemplate("runner", $("runner"));
+const game = template.game;
 const handsFree = new HandsFreeStart();
-const runner = createRunner($("runner"));
+const runner = template.renderer;
+const brandFiles = { logo: null, background: null };
+const brandLoads = { logo: 0, background: 0 };
+let pendingImages = 0;
+async function loadBrandFile(file, slot) {
+  const token = ++brandLoads[slot];
+  pendingImages++;
+  try {
+    await brandAssets.load(file, slot);
+    if (token === brandLoads[slot]) {
+      brandFiles[slot] = file;
+      changed();
+    }
+  } finally {
+    pendingImages--;
+  }
+}
+const changed = () => document.dispatchEvent(new Event("studio:changed"));
 if (runner.error) $("runnerState").textContent = runner.error;
 let branding = { ...brandDefaults };
 function pauseForBranding() {
+  changed();
   handsFree.disarm();
   game.pause("Branding edited · Re-arm when ready");
 }
@@ -181,7 +200,7 @@ const brandAssets = createBrandAssets(
       !!url;
   },
   (text) => {
-    $("brandStatus").textContent = text + " · Session only; not saved";
+    $("brandStatus").textContent = text + " · Use Save project to keep changes";
   },
 );
 for (const [id, key] of [
@@ -206,7 +225,7 @@ for (const [id, slot] of [
     pauseForBranding();
     $("brandStatus").textContent = "Checking image…";
     try {
-      await brandAssets.load(file, slot);
+      await loadBrandFile(file, slot);
     } catch (error) {
       $("brandStatus").textContent = error.message;
       toast(error.message);
@@ -217,19 +236,27 @@ for (const [id, slot] of [
 }
 $("removeLogo").onclick = () => {
   pauseForBranding();
+  brandLoads.logo++;
   brandAssets.remove("logo");
-  $("brandStatus").textContent = "Logo removed · Session only";
+  brandFiles.logo = null;
+  $("brandStatus").textContent = "Logo removed · Unsaved until Save project";
 };
 $("removeBackdrop").onclick = () => {
   pauseForBranding();
+  brandLoads.background++;
   brandAssets.remove("background");
+  brandFiles.background = null;
   $("brandStatus").textContent =
     "Background image removed · Colour backdrop active";
 };
 $("resetBrand").onclick = () => {
   pauseForBranding();
+  brandLoads.logo++;
   brandAssets.remove("logo");
+  brandFiles.logo = null;
+  brandLoads.background++;
   brandAssets.remove("background");
+  brandFiles.background = null;
   branding = { ...brandDefaults };
   $("brandTitle").value = branding.title;
   $("brandPrimary").value = branding.primary;
@@ -237,7 +264,7 @@ $("resetBrand").onclick = () => {
   $("brandBackground").value = branding.background;
   applyBrand();
   $("brandStatus").textContent =
-    "Branding reset · Session only; refresh clears changes";
+    "Branding reset · Use Save project to keep changes";
 };
 applyBrand();
 
@@ -521,21 +548,13 @@ const openGuide = () => {
 $("guide").onclick = openGuide;
 $("closeGuide").onclick = () => $("guideDialog").close();
 $("gotIt").onclick = () => $("guideDialog").close();
-$("projectsNav").onclick = () =>
-  toast(
-    "Project saving comes next. Event branding is available above Wonder Run.",
-  );
-$("templatesNav").onclick = () =>
-  toast(
-    "Wonder Run is ready below. Use Event branding above the runner; project saving comes next.",
-  );
 $("labNav").onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
 $("setupNav").onclick = () => {
   $("tuningPanel").scrollIntoView({ behavior: "smooth", block: "center" });
 };
 const controlled = (e) =>
   ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(e.target.tagName) ||
-  $("guideDialog").open;
+  !!document.querySelector("dialog[open]");
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     handsFree.disarm();
@@ -567,7 +586,7 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pagehide", () => {
   stop();
   brandAssets.dispose();
-  runner.dispose?.();
+  template.dispose();
 });
 function setQuality(p) {
   const q = quality(p);
@@ -901,7 +920,7 @@ function frame(now) {
       !runner.error &&
       !document.hidden &&
       document.hasFocus() &&
-      !$("guideDialog").open,
+      !document.querySelector("dialog[open]"),
   });
   if (autoAction === "calibrate") beginCalibration();
   if (autoAction === "start") game.start();
@@ -919,10 +938,82 @@ function frame(now) {
               : game.state === "running"
                 ? "Hands-free active · Tracking loss pauses, full-body return restarts countdown"
                 : "Step back · Show head, hands, knees and feet. Hold still.";
-  game.update(dt, a);
-  runner.draw(game);
+  template.update(dt, a);
+  template.render();
   updateGameUI(a);
   updateMonitor(a);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+const studio = mountProjectStudio({
+  pause: () => {
+    handsFree.disarm();
+    game.pause("Project editor open · Re-arm when ready");
+    keys.clear();
+    keyJump = keySwing = false;
+  },
+  capture: () => {
+    if (pendingImages)
+      throw Error("Wait for image validation to finish, then retry");
+    return {
+      branding: { ...branding },
+      settings: {
+        mode: $("runMode").value,
+        difficulty: $("runDifficulty").value,
+        jumpInput: $("jumpInput").value,
+        handsFree: $("handsFreeEnabled").checked,
+        thresholds: { ...engine.thresholds },
+      },
+      files: { ...brandFiles },
+    };
+  },
+  assign: async (slot, file) => {
+    await loadBrandFile(file, slot);
+  },
+  apply: async (project, files) => {
+    stop();
+    handsFree.disarm();
+    resetMotion();
+    for (const slot of ["logo", "background"]) {
+      brandLoads[slot]++;
+      if (files[slot]) await brandAssets.load(files[slot], slot);
+      else brandAssets.remove(slot);
+      brandFiles[slot] = files[slot];
+    }
+    branding = { ...project.branding };
+    for (const [id, key] of [
+      ["brandTitle", "title"],
+      ["brandPrimary", "primary"],
+      ["brandAccent", "accent"],
+      ["brandBackground", "background"],
+    ])
+      $(id).value = branding[key];
+    applyBrand();
+    const s = project.settings;
+    $("runMode").value = s.mode;
+    $("runDifficulty").value = s.difficulty;
+    $("handsFreeEnabled").checked = s.handsFree;
+    $("jumpInput").value = s.jumpInput;
+    $("jumpInput").onchange();
+    engine.thresholds = { ...s.thresholds };
+    engine.reset();
+    for (const [key, value] of Object.entries(s.thresholds)) {
+      $("tune-" + key).value = value;
+      $("out-" + key).textContent = value.toFixed(2);
+    }
+    resetGame();
+    actions = neutralActions();
+    $("brandStatus").textContent =
+      "Project branding loaded · Camera off; calibrate again before playing";
+  },
+});
+for (const id of [
+  "runMode",
+  "runDifficulty",
+  "jumpInput",
+  "handsFreeEnabled",
+  ...Object.keys(defaults).map((k) => "tune-" + k),
+])
+  $(id).addEventListener("input", () => studio.markDirty());
+$("resetThresholds").addEventListener("click", () => studio.markDirty());
