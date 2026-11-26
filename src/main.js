@@ -1,5 +1,11 @@
 import "./style.css";
 import {
+  brandDefaults,
+  normalizeBrand,
+  createBrandAssets,
+  readableInk,
+} from "./branding.js";
+import {
   createIcons,
   FlaskConical,
   Scan,
@@ -95,11 +101,12 @@ document.querySelector("#app").innerHTML = `
   )}</div><button class="button dark full" id="calibrate">${icon("Scan")} Calibrate stance</button><div class="calibration-progress"><div id="calibrationProgress"></div></div><small id="calibrationHelp">A stable 2-second stance sets your neutral position.</small></section>
 <section class="panel tips-panel"><div class="tips-title">${icon("Activity")} A better tracking setup</div><ul><li>Step back until your entire body fits.</li><li>Use even lighting and a clear space.</li><li>One person in the camera at a time.</li></ul><div>Start around 2–3 m away; adjust to your camera.</div></section></aside></div>
 <section class="inputs-section"><div class="section-title"><div><h2>Movement inputs <span>05</span></h2><p>Live signals, ready to map to your game.</p></div><span class="signal-label"><span class="dot" id="signalDot"></span><span id="signalText">Waiting for input</span></span></div><div class="movement-grid">${cards.map(([id, title, ic, key]) => `<article class="movement-card" id="card-${id}"><div class="movement-top"><span class="movement-icon">${icon(ic)}</span><span class="input-state" id="state-${id}">IDLE</span></div><h3 id="title-${id}">${title}</h3><div class="input-value" id="value-${id}">${id === "lean" ? "0.00" : id === "run" ? "0" : "—"}<small>${id === "run" ? " steps/min" : id === "lean" ? " neutral" : ""}</small></div><div class="meter"><div id="meter-${id}"></div></div><div class="key-hint"><span>${key}</span><span>${id === "lean" ? "Continuous" : id === "run" ? "Cadence" : id === "squat" ? "Hold" : "Trigger"}</span></div></article>`).join("")}</div></section>
-<div class="bottom-grid"><section class="panel runner-panel" id="runnerPanel"><div class="panel-heading"><div><h2>${icon("Play")} Wonder Run</h2><span class="section-sub">Three lanes. Real movement. One minute to make it count.</span></div><button class="button secondary compact" id="expandRunner">${icon("Expand")} Focus view</button></div>
-<div class="runner-playtest-layout"><div class="runner-stage" id="runner"><div class="runner-label"><span>WONDER RUN</span><small id="runnerSource">WEBCAM · FULL BODY REQUIRED</small></div><span class="runner-state" id="runnerState">READY</span>
+<section class="panel branding-panel" id="brandingPanel"><div class="panel-heading"><div><h2>${icon("Settings2")} Event branding</h2><span class="section-sub">Make Wonder Run your client’s game. Changes preview live.</span></div><button class="button secondary compact" id="resetBrand">${icon("RotateCcw")} Reset branding</button></div><div class="branding-grid"><div class="branding-identity"><label for="brandTitle">Game title</label><input id="brandTitle" type="text" maxlength="60" value="WONDER RUN" placeholder="Your event game title"><small>Up to 60 characters · plain text</small><div class="brand-colours"><label for="brandPrimary">Primary<input id="brandPrimary" type="color" value="#d6f65c"><output id="primaryHex">#d6f65c</output></label><label for="brandAccent">Accent<input id="brandAccent" type="color" value="#304d3d"><output id="accentHex">#304d3d</output></label><label for="brandBackground">Backdrop<input id="brandBackground" type="color" value="#dfe8db"><output id="backgroundHex">#dfe8db</output></label></div></div><div class="branding-upload"><label for="brandLogo">Company logo</label><div class="brand-asset-preview"><img id="logoPreview" alt="Selected company logo" hidden><span id="logoPlaceholder">Your logo here</span></div><input id="brandLogo" type="file" accept="image/png,image/jpeg,image/webp"><div><small>PNG / JPEG / WebP · max 2 MB</small><button class="text-button" id="removeLogo">Remove logo</button></div></div><div class="branding-upload"><label for="brandBackdrop">Background image</label><div class="brand-asset-preview background-sample" id="backgroundPreview"><img id="backdropPreviewImage" alt="Selected game background" hidden><span id="backgroundPlaceholder">Colour backdrop</span></div><input id="brandBackdrop" type="file" accept="image/png,image/jpeg,image/webp"><div><small>PNG / JPEG / WebP · max 8 MB</small><button class="text-button" id="removeBackdrop">Remove image</button></div></div></div><div class="brand-status"><span id="brandStatus" role="status">Session-only preview · Refresh clears branding. Project save/load comes next.</span><span>Orange blocks, blue bars and gold pickups keep their gameplay colours.</span></div></section>
+<div class="bottom-grid"><section class="panel runner-panel" id="runnerPanel"><div class="panel-heading"><div><h2>${icon("Play")} <span data-brand-title>WONDER RUN</span></h2><span class="section-sub">Three lanes. Real movement. One minute to make it count.</span></div><button class="button secondary compact" id="expandRunner">${icon("Expand")} Focus view</button></div>
+<div class="runner-playtest-layout"><div class="runner-stage" id="runner"><img class="game-backdrop" id="gameBackdrop" alt="" hidden><div class="runner-label"><img class="game-logo" data-brand-logo alt="Company logo" hidden><span data-brand-title>WONDER RUN</span><small id="runnerSource">WEBCAM · FULL BODY REQUIRED</small></div><span class="runner-state" id="runnerState">READY</span>
 <div class="runner-hud"><span>SCORE <b id="gameScore">0</b></span><span>LIVES <b id="gameLives">♥ ♥ ♥</b></span><span>TIME <b id="gameTime">60s</b></span><span>PICKUPS <b id="gameCoins">0</b></span></div>
 <div class="game-message" id="gameMessage" role="status" aria-live="polite"></div><div class="game-feedback" id="gameFeedback"></div>
-<div class="game-results" id="gameResults" hidden><span>SESSION RESULTS</span><h3 id="resultTitle">Run complete</h3><strong id="resultScore">0</strong><p id="resultDetails"></p><button class="button primary" id="replayRunner">Play again ↗</button></div></div>
+<div class="game-results" id="gameResults" hidden><img class="results-logo" data-brand-logo alt="Company logo" hidden><span data-brand-title>WONDER RUN</span><span>SESSION RESULTS</span><h3 id="resultTitle">Run complete</h3><strong id="resultScore">0</strong><p id="resultDetails"></p><button class="button primary" id="replayRunner">Play again ↗</button></div></div>
 <aside class="runner-monitor" aria-label="Live webcam playtest monitor"><div class="monitor-heading"><strong>${icon("Camera")} Your movement</strong><span id="monitorBadge">CAMERA OFF</span></div><div class="monitor-preview" id="monitorPreview"><canvas id="monitorCanvas" aria-label="Mirrored live webcam and skeleton preview"></canvas><p id="monitorEmpty">Enable webcam to see your full body here while you play.</p></div><p id="monitorStatus" role="status">Enable webcam, then calibrate.</p><div class="monitor-quality" aria-label="Body visibility"><span id="monitor-torso">Torso —</span><span id="monitor-hands">Hands —</span><span id="monitor-legs">Feet —</span></div><div class="monitor-actions"><button class="button dark compact" id="monitorEnable">Enable webcam</button><button class="button secondary compact" id="monitorStop" aria-label="Stop webcam from game view">Stop</button><button class="button primary compact" id="monitorCalibrate">Calibrate stance</button><button class="text-button" id="monitorKeyboard">Use keyboard instead</button></div><small>Same camera · on-device only · no video stored</small></aside></div>
 <div class="handsfree-bar"><label><input type="checkbox" id="handsFreeEnabled" checked> Hands-free webcam start</label><span id="handsFreeStatus" role="status">Enable webcam, then step back. Auto-calibrate → 3–2–1 → run.</span></div><div class="runner-toolbar"><select id="runMode" aria-label="Runner mode"><option value="auto">B · Auto-run</option><option value="steps">A · Run in place</option></select><select id="runDifficulty" aria-label="Runner difficulty"><option value="easy">Easy · 6 m/s</option><option value="normal" selected>Normal · 8 m/s</option><option value="hard">Hard · 10 m/s</option></select><select id="jumpInput" aria-label="Jump input"><option value="hands">Jump · Hands up</option><option value="physical">Jump · Physical jump</option></select><button class="button dark compact" id="playRunner">▶ Start run</button><button class="button secondary compact" id="resetRunner">${icon("RotateCcw")} Reset</button></div>
 <p class="runner-footnote" id="runnerInstructions">Lean / A-D: lanes · Both hands up / Space: jump orange blocks · S: duck blue bars · W: run in mode A · Escape: pause. Gold pickups +100; clear a row +50.</p><div class="runner-session" id="gameSession">60-second run · 3 lives · Seed 2026 · Mode changes reset the run</div></section>
@@ -133,6 +140,107 @@ game.reset({ difficulty: "normal" });
 const handsFree = new HandsFreeStart();
 const runner = createRunner($("runner"));
 if (runner.error) $("runnerState").textContent = runner.error;
+let branding = { ...brandDefaults };
+function pauseForBranding() {
+  handsFree.disarm();
+  game.pause("Branding edited · Re-arm when ready");
+}
+function applyBrand() {
+  branding = normalizeBrand(branding);
+  document
+    .querySelectorAll("[data-brand-title]")
+    .forEach((el) => (el.textContent = branding.title));
+  $("runnerPanel").style.setProperty("--brand-primary", branding.primary);
+  $("runnerPanel").style.setProperty(
+    "--brand-ink",
+    readableInk(branding.primary),
+  );
+  $("runnerPanel").style.setProperty(
+    "--accent-ink",
+    readableInk(branding.accent),
+  );
+  $("runnerPanel").style.setProperty("--brand-accent", branding.accent);
+  for (const key of ["primary", "accent", "background"])
+    $(key + "Hex").textContent = branding[key];
+  $("backgroundPreview").style.backgroundColor = branding.background;
+  runner.setBrand(branding);
+}
+const brandAssets = createBrandAssets(
+  (slot, url) => {
+    pauseForBranding();
+    const imgs =
+      slot === "logo"
+        ? [...document.querySelectorAll("[data-brand-logo]"), $("logoPreview")]
+        : [$("gameBackdrop"), $("backdropPreviewImage")];
+    imgs.forEach((img) => {
+      img.hidden = !url;
+      if (url) img.src = url;
+      else img.removeAttribute("src");
+    });
+    $(slot === "logo" ? "logoPlaceholder" : "backgroundPlaceholder").hidden =
+      !!url;
+  },
+  (text) => {
+    $("brandStatus").textContent = text + " · Session only; not saved";
+  },
+);
+for (const [id, key] of [
+  ["brandTitle", "title"],
+  ["brandPrimary", "primary"],
+  ["brandAccent", "accent"],
+  ["brandBackground", "background"],
+]) {
+  $(id).oninput = (e) => {
+    pauseForBranding();
+    branding[key] = e.target.value;
+    applyBrand();
+  };
+}
+for (const [id, slot] of [
+  ["brandLogo", "logo"],
+  ["brandBackdrop", "background"],
+]) {
+  $(id).onchange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    pauseForBranding();
+    $("brandStatus").textContent = "Checking image…";
+    try {
+      await brandAssets.load(file, slot);
+    } catch (error) {
+      $("brandStatus").textContent = error.message;
+      toast(error.message);
+    } finally {
+      e.target.value = "";
+    }
+  };
+}
+$("removeLogo").onclick = () => {
+  pauseForBranding();
+  brandAssets.remove("logo");
+  $("brandStatus").textContent = "Logo removed · Session only";
+};
+$("removeBackdrop").onclick = () => {
+  pauseForBranding();
+  brandAssets.remove("background");
+  $("brandStatus").textContent =
+    "Background image removed · Colour backdrop active";
+};
+$("resetBrand").onclick = () => {
+  pauseForBranding();
+  brandAssets.remove("logo");
+  brandAssets.remove("background");
+  branding = { ...brandDefaults };
+  $("brandTitle").value = branding.title;
+  $("brandPrimary").value = branding.primary;
+  $("brandAccent").value = branding.accent;
+  $("brandBackground").value = branding.background;
+  applyBrand();
+  $("brandStatus").textContent =
+    "Branding reset · Session only; refresh clears changes";
+};
+applyBrand();
+
 let camera = null,
   controller = null,
   generation = 0,
@@ -415,10 +523,12 @@ $("closeGuide").onclick = () => $("guideDialog").close();
 $("gotIt").onclick = () => $("guideDialog").close();
 $("projectsNav").onclick = () =>
   toast(
-    "Project saving and branding are planned for the project-editor milestone.",
+    "Project saving comes next. Event branding is available above Wonder Run.",
   );
 $("templatesNav").onclick = () =>
-  toast("Wonder Run is ready below. Project saving and branding come next.");
+  toast(
+    "Wonder Run is ready below. Use Event branding above the runner; project saving comes next.",
+  );
 $("labNav").onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
 $("setupNav").onclick = () => {
   $("tuningPanel").scrollIntoView({ behavior: "smooth", block: "center" });
@@ -456,6 +566,7 @@ document.addEventListener("visibilitychange", () => {
 });
 window.addEventListener("pagehide", () => {
   stop();
+  brandAssets.dispose();
   runner.dispose?.();
 });
 function setQuality(p) {

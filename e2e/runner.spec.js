@@ -257,3 +257,92 @@ test("hands-free camera start calibrates without clicking and cancels safely", a
   await expect(page.locator("#monitorBadge")).toHaveText("CAMERA OFF");
   await expect(page.locator("#playRunner")).toHaveText("Step back to start");
 });
+
+test("branding previews safe text, colours, raster images, replacement, focus and reset", async ({
+  page,
+}) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  const hostile = "<img src=x onerror=alert(1)>";
+  await page.locator("#brandTitle").fill(hostile);
+  await expect(page.locator(".runner-label [data-brand-title]")).toHaveText(
+    hostile,
+  );
+  await expect(
+    page.locator(".runner-label [data-brand-title] img"),
+  ).toHaveCount(0);
+  await page.locator("#brandTitle").fill("ACME Motion Sprint");
+  await page.locator("#brandPrimary").evaluate((el) => {
+    el.value = "#f04466";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.locator("#brandAccent").evaluate((el) => {
+    el.value = "#2544aa";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.locator("#brandBackground").evaluate((el) => {
+    el.value = "#e9d8ff";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await expect(page.locator("#runner")).toHaveCSS(
+    "background-color",
+    "rgb(233, 216, 255)",
+  );
+  await expect(page.locator("#primaryHex")).toHaveText("#f04466");
+  const png = await page.evaluate(() => {
+    const c = document.createElement("canvas");
+    c.width = 80;
+    c.height = 40;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#ff3300";
+    ctx.fillRect(0, 0, 80, 40);
+    return c.toDataURL().split(",")[1];
+  });
+  const asset = {
+    name: "acme.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(png, "base64"),
+  };
+  await page.locator("#brandLogo").setInputFiles(asset);
+  await expect(page.locator("#logoPreview")).toBeVisible();
+  await expect(page.locator(".game-logo")).toHaveJSProperty("naturalWidth", 80);
+  await page.locator("#brandBackdrop").setInputFiles(asset);
+  await expect(page.locator("#gameBackdrop")).toBeVisible();
+  const oldLogo = await page.locator("#logoPreview").getAttribute("src");
+  await page.locator("#brandLogo").setInputFiles({
+    name: "broken.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("not a raster"),
+  });
+  await expect(page.locator("#brandStatus")).toContainText("contents");
+  await expect(page.locator("#logoPreview")).toHaveAttribute("src", oldLogo);
+  await page.locator("#expandRunner").click();
+  await expect(page.locator(".game-logo")).toBeInViewport();
+  await expect(page.locator(".runner-label [data-brand-title]")).toHaveText(
+    "ACME Motion Sprint",
+  );
+  await page.locator("#expandRunner").click();
+  await page.locator("#keyboardTab").click();
+  await page.locator("#playRunner").click();
+  await expect(page.locator("#runnerState")).toHaveText("COUNTDOWN");
+  await page.locator("#brandTitle").fill("Edited title");
+  await expect(page.locator("#runnerState")).toHaveText("PAUSED");
+  await page.locator("#removeLogo").click();
+  await expect(page.locator(".game-logo")).toBeHidden();
+  await page.locator("#removeBackdrop").click();
+  await expect(page.locator("#gameBackdrop")).toBeHidden();
+  await page.locator("#resetBrand").click();
+  await expect(page.locator("#brandTitle")).toHaveValue("WONDER RUN");
+  await expect(page.locator("#brandPrimary")).toHaveValue("#d6f65c");
+  await expect(page.locator(".runner-label [data-brand-title]")).toHaveText(
+    "WONDER RUN",
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  expect(errors).toEqual([]);
+});

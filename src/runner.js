@@ -7,6 +7,7 @@ export function createRunner(host) {
   } catch {
     return {
       draw() {},
+      setBrand() {},
       error: "WebGL unavailable. Motion diagnostics still work.",
     };
   }
@@ -28,13 +29,15 @@ export function createRunner(host) {
     scene.add(mesh);
     return mesh;
   };
-  box(8, 0.2, 65, "#c5d1bf", 0, -0.15, -22);
+  const track = box(8, 0.2, 65, "#c5d1bf", 0, -0.15, -22);
   const markings = [];
   for (let z = 0; z > -48; z -= 3) {
     for (const x of [-1.1, 1.1])
       markings.push(box(0.035, 0.01, 1.4, "#f8faf3", x, 0, z));
   }
-  for (const x of [-4.3, 4.3]) box(0.15, 0.15, 60, "#5b755e", x, 0, -23);
+  const rails = [-4.3, 4.3].map((x) =>
+    box(0.15, 0.15, 60, "#5b755e", x, 0, -23),
+  );
   for (let i = 0; i < 16; i++) {
     const x = (i % 2 ? 1 : -1) * (5 + (i % 3));
     box(0.3, 1.5, 0.3, "#75926f", x, 0.75, -i * 3);
@@ -70,6 +73,14 @@ export function createRunner(host) {
   let width = 0,
     height = 0;
   return {
+    setBrand(brand) {
+      body.material.color.set(brand.primary);
+      arms.forEach((m) => m.material.color.set(brand.accent));
+      rails.forEach((m) => m.material.color.set(brand.accent));
+      track.material.color.set(brand.background).multiplyScalar(0.9);
+      scene.fog.color.set(brand.background);
+      host.style.backgroundColor = brand.background;
+    },
     draw(game) {
       const r = host.getBoundingClientRect();
       if (r.width !== width || r.height !== height) {
