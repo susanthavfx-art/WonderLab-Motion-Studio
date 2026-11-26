@@ -1,4 +1,5 @@
 import { HandsUpJump } from "./hands-up-jump.js";
+import { PhysicalJump } from "./physical-jump.js";
 export const defaults = {
   lean: 0.15,
   squat: 0.22,
@@ -59,9 +60,17 @@ export const neutralActions = () => ({
 export class MotionEngine {
   constructor() {
     this.handsUp = new HandsUpJump();
+    this.physicalJump = new PhysicalJump();
+    this.jumpMode = "hands";
     this.thresholds = { ...defaults };
     this.profile = null;
     this.samples = null;
+    this.reset();
+  }
+  setJumpMode(mode) {
+    if (!["hands", "physical"].includes(mode))
+      throw new Error("Unknown jump input");
+    this.jumpMode = mode;
     this.reset();
   }
   reset() {
@@ -71,6 +80,7 @@ export class MotionEngine {
     this.lastStep = -Infinity;
     this.lastSwing = -Infinity;
     this.handsUp.reset();
+    this.physicalJump.reset();
     this.squatting = false;
     this.lastTime = null;
     this.actions = neutralActions();
@@ -156,7 +166,10 @@ export class MotionEngine {
     this.squatting =
       drop > (this.squatting ? t.squat * 0.6 : t.squat) &&
       kneeCompression > 0.06;
-    const jump = this.handsUp.update(p, now, b.scale, t.jump, this.squatting);
+    const jump =
+      this.jumpMode === "physical"
+        ? this.physicalJump.update(p, now, b, t.jump, this.squatting)
+        : this.handsUp.update(p, now, b.scale, t.jump, this.squatting);
     let swing = false;
     if (
       this.previous &&
