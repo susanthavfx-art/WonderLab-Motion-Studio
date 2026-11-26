@@ -40,6 +40,7 @@ Run `npm run build && node scripts/check-build.mjs` to verify compiled HTML, rel
 - Experimental torso lean, wrist swing, squat, jump and alternating-step/cadence estimates, with live cards and session-only sensitivity controls.
 - Keyboard test without webcam: **A/D or arrows** lean, **S/down** squat, **Space** jump, **J** swing, **hold W/up** simulate running. Click outside buttons/inputs to use game keys. Escape, window blur and tab hiding pause the game and clear keys.
 - **Wonder Run playable prototype:** three lanes, orange jump blocks, blue duck-under bars, gold pickups, score, three lives, a 60-second session and results/replay. Select A (run-in-place intensity) / B (auto-run), and Easy/Normal/Hard. Calibrate a visible body or choose Keyboard test, then press Start run. Each start/resume has a 3-second countdown. Lost/stale required tracking pauses time, distance, collisions and score; resume manually after reacquisition. Focus view enlarges the game without browser fullscreen permission.
+- **Game-side webcam monitor:** live uncropped camera + skeleton, torso/hands/feet visibility, calibration progress and camera controls are beside the runner in both normal and Focus views. You can enable/stop the webcam, calibrate/recalibrate or switch to keyboard without scrolling back to the Motion Capture section. The monitor copies the existing video/overlay onto a canvas; it does not open another camera or run another pose detector. Mirror follows the main Mirror setting. On narrow screens the monitor is stacked immediately below the game.
 - Responsive desktop/mobile layout, setup guide and explicit future-feature notices.
 
 **Still a prototype, not event-ready.** Project save/load, branding uploads, custom models/audio, persistent leaderboards and dedicated event play mode are next milestones. Projects/Templates in the sidebar are clearly marked Soon and explain the planned scope. Calibration and sensitivity are deliberately not persisted. No backend, authentication, video recording or cloud uploads are implemented.
@@ -76,7 +77,7 @@ npm run build
 npm run test:browser
 ```
 
-The tracked Playwright test checks the built app (not Vite dev mode): camera calibration guard, keyboard A/B, countdown, jump/lean cards, score progress, Escape/pause freeze, manual resume countdown, guide pause, mode reset, three-life reset, focus view, mobile width and uncaught page errors. Set `CHROMIUM_PATH` to use an existing Chromium executable. CI installs Chromium and runs this smoke test before publishing Pages.
+The two tracked Playwright tests check the built app (not Vite dev mode). The second uses a synthetic camera stream and deterministic pose results to verify simultaneous game/monitor visibility in Focus view, shared single camera capture, canvas pixels, calibration, mirror changes, stopping/pausing and keyboard switching. It is a UI/lifecycle test, not proof of real webcam accuracy. The original test covers: camera calibration guard, keyboard A/B, countdown, jump/lean cards, score progress, Escape/pause freeze, manual resume countdown, guide pause, mode reset, three-life reset, focus view, mobile width and uncaught page errors. Set `CHROMIUM_PATH` to use an existing Chromium executable. CI installs Chromium and runs this smoke test before publishing Pages.
 
 ## First real-webcam test
 

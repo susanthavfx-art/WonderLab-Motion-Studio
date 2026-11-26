@@ -95,10 +95,11 @@ document.querySelector("#app").innerHTML = `
 <section class="panel tips-panel"><div class="tips-title">${icon("Activity")} A better tracking setup</div><ul><li>Step back until your entire body fits.</li><li>Use even lighting and a clear space.</li><li>One person in the camera at a time.</li></ul><div>Start around 2–3 m away; adjust to your camera.</div></section></aside></div>
 <section class="inputs-section"><div class="section-title"><div><h2>Movement inputs <span>05</span></h2><p>Live signals, ready to map to your game.</p></div><span class="signal-label"><span class="dot" id="signalDot"></span><span id="signalText">Waiting for input</span></span></div><div class="movement-grid">${cards.map(([id, title, ic, key]) => `<article class="movement-card" id="card-${id}"><div class="movement-top"><span class="movement-icon">${icon(ic)}</span><span class="input-state" id="state-${id}">IDLE</span></div><h3>${title}</h3><div class="input-value" id="value-${id}">${id === "lean" ? "0.00" : id === "run" ? "0" : "—"}<small>${id === "run" ? " steps/min" : id === "lean" ? " neutral" : ""}</small></div><div class="meter"><div id="meter-${id}"></div></div><div class="key-hint"><span>${key}</span><span>${id === "lean" ? "Continuous" : id === "run" ? "Cadence" : id === "squat" ? "Hold" : "Trigger"}</span></div></article>`).join("")}</div></section>
 <div class="bottom-grid"><section class="panel runner-panel" id="runnerPanel"><div class="panel-heading"><div><h2>${icon("Play")} Wonder Run</h2><span class="section-sub">Three lanes. Real movement. One minute to make it count.</span></div><button class="button secondary compact" id="expandRunner">${icon("Expand")} Focus view</button></div>
-<div class="runner-stage" id="runner"><div class="runner-label"><span>WONDER RUN</span><small id="runnerSource">WEBCAM · FULL BODY REQUIRED</small></div><span class="runner-state" id="runnerState">READY</span>
+<div class="runner-playtest-layout"><div class="runner-stage" id="runner"><div class="runner-label"><span>WONDER RUN</span><small id="runnerSource">WEBCAM · FULL BODY REQUIRED</small></div><span class="runner-state" id="runnerState">READY</span>
 <div class="runner-hud"><span>SCORE <b id="gameScore">0</b></span><span>LIVES <b id="gameLives">♥ ♥ ♥</b></span><span>TIME <b id="gameTime">60s</b></span><span>PICKUPS <b id="gameCoins">0</b></span></div>
 <div class="game-message" id="gameMessage" role="status" aria-live="polite"></div><div class="game-feedback" id="gameFeedback"></div>
 <div class="game-results" id="gameResults" hidden><span>SESSION RESULTS</span><h3 id="resultTitle">Run complete</h3><strong id="resultScore">0</strong><p id="resultDetails"></p><button class="button primary" id="replayRunner">Play again ↗</button></div></div>
+<aside class="runner-monitor" aria-label="Live webcam playtest monitor"><div class="monitor-heading"><strong>${icon("Camera")} Your movement</strong><span id="monitorBadge">CAMERA OFF</span></div><div class="monitor-preview" id="monitorPreview"><canvas id="monitorCanvas" aria-label="Mirrored live webcam and skeleton preview"></canvas><p id="monitorEmpty">Enable webcam to see your full body here while you play.</p></div><p id="monitorStatus" role="status">Enable webcam, then calibrate.</p><div class="monitor-quality" aria-label="Body visibility"><span id="monitor-torso">Torso —</span><span id="monitor-hands">Hands —</span><span id="monitor-legs">Feet —</span></div><div class="monitor-actions"><button class="button dark compact" id="monitorEnable">Enable webcam</button><button class="button secondary compact" id="monitorStop" aria-label="Stop webcam from game view">Stop</button><button class="button primary compact" id="monitorCalibrate">Calibrate stance</button><button class="text-button" id="monitorKeyboard">Use keyboard instead</button></div><small>Same camera · on-device only · no video stored</small></aside></div>
 <div class="runner-toolbar"><select id="runMode" aria-label="Runner mode"><option value="auto">B · Auto-run</option><option value="steps">A · Run in place</option></select><select id="runDifficulty" aria-label="Runner difficulty"><option value="easy">Easy · 6 m/s</option><option value="normal">Normal · 8 m/s</option><option value="hard">Hard · 10 m/s</option></select><button class="button dark compact" id="playRunner">▶ Start run</button><button class="button secondary compact" id="resetRunner">${icon("RotateCcw")} Reset</button></div>
 <p class="runner-footnote">Lean / A-D: lanes · Space: jump orange blocks · S: duck blue bars · W: run in mode A · Escape: pause. Gold pickups +100; clear a row +50.</p><div class="runner-session" id="gameSession">60-second run · 3 lives · Seed 2026 · Mode changes reset the run</div></section>
 <section class="panel tuning-panel" id="tuningPanel"><div class="small-heading"><h2>${icon("Settings2")} Input sensitivity</h2><button class="text-button" id="resetThresholds">Reset</button></div><p>Starting points, not universal settings. Tune for your camera and player.</p>${[
@@ -261,6 +262,17 @@ $("keyboardTab").onclick = () => setSource("keyboard");
 $("stopCamera").onclick = () => {
   stop();
   if (source === "keyboard") setSource("webcam");
+};
+// Monitor controls proxy the existing lifecycle; never open a second camera stream.
+$("monitorEnable").onclick = enable;
+$("monitorStop").onclick = () => $("stopCamera").click();
+$("monitorCalibrate").onclick = () => {
+  $("calibrate").click();
+  document.activeElement?.blur();
+};
+$("monitorKeyboard").onclick = () => {
+  setSource("keyboard");
+  document.activeElement?.blur();
 };
 $("mirror").onchange = () => {
   $("cameraStage").classList.toggle("unmirrored", !$("mirror").checked);
@@ -517,6 +529,93 @@ function updateGameUI(a) {
     game.feedbackTime > 1.1 && game.feedback.startsWith("Collision"),
   );
 }
+const monitorContext = $("monitorCanvas").getContext("2d");
+let monitorFrame = -1;
+function updateMonitor(a) {
+  const live = !!camera;
+  const q = quality(live && camera.ready ? camera.landmarks : null);
+  const mirrored = $("mirror").checked;
+  $("monitorCanvas").style.transform = mirrored ? "scaleX(-1)" : "none";
+  $("monitorCanvas").setAttribute(
+    "aria-label",
+    `${mirrored ? "Mirrored" : "Unmirrored"} live webcam and skeleton preview`,
+  );
+  $("monitorBadge").textContent =
+    source === "keyboard"
+      ? "KEYBOARD"
+      : starting
+        ? "CONNECTING"
+        : live
+          ? "LIVE"
+          : "CAMERA OFF";
+  $("monitorBadge").classList.toggle("good", live && a.valid);
+  $("monitorEmpty").hidden = live;
+  $("monitorCanvas").hidden = !live;
+  $("monitorEmpty").textContent =
+    source === "keyboard"
+      ? "Keyboard test active. Enable webcam here to return to motion controls."
+      : "Enable webcam to see your full body here while you play.";
+  $("monitorEnable").hidden = live;
+  $("monitorEnable").disabled = starting;
+  $("monitorStop").hidden = !live && !starting;
+  $("monitorCalibrate").disabled = !live || !q.full || starting;
+  $("monitorCalibrate").textContent = calibrating
+    ? "Restart calibration"
+    : engine.profile
+      ? "Recalibrate"
+      : "Calibrate stance";
+  $("monitorKeyboard").hidden = source === "keyboard";
+  $("monitorStatus").textContent =
+    source === "keyboard"
+      ? "A/D lean · S squat · Space jump · W run"
+      : starting
+        ? $("statusText").textContent
+        : !live
+          ? $("statusText").textContent
+          : calibrating
+            ? `Hold steady · ${Math.round((engine.samples?.length ? Math.min(1, (engine.samples.at(-1).time - engine.samples[0].time) / 2000) : 0) * 100)}%`
+            : !q.full
+              ? "Tracking incomplete · Show head, hands, knees and feet"
+              : !engine.profile
+                ? "Full body visible · Calibrate your neutral stance"
+                : a.valid
+                  ? "Calibrated · Full body tracked"
+                  : "Waiting for fresh tracking · Game paused";
+  for (const [id, label] of [
+    ["torso", "Torso"],
+    ["hands", "Hands"],
+    ["legs", "Feet"],
+  ]) {
+    $("monitor-" + id).textContent = `${label} ${q[id] ? "✓" : "—"}`;
+    $("monitor-" + id).classList.toggle("good", q[id]);
+  }
+  if (!live) {
+    monitorFrame = -1;
+    monitorContext.clearRect(
+      0,
+      0,
+      $("monitorCanvas").width,
+      $("monitorCanvas").height,
+    );
+    return;
+  }
+  // Draw only visible monitors at video-frame cadence. Copy original overlay pixels,
+  // not a second tracker; CSS applies the same mirroring to video and skeleton.
+  const rect = $("monitorCanvas").getBoundingClientRect();
+  if (rect.bottom < 0 || rect.top > innerHeight || camera.video.readyState < 2)
+    return;
+  if (monitorFrame === camera.video.currentTime) return;
+  monitorFrame = camera.video.currentTime;
+  const canvas = $("monitorCanvas");
+  const width = camera.video.videoWidth || 640,
+    height = camera.video.videoHeight || 480;
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  monitorContext.drawImage(camera.video, 0, 0, width, height);
+  if (camera.ready) monitorContext.drawImage($("overlay"), 0, 0, width, height);
+}
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
@@ -598,6 +697,7 @@ function frame(now) {
   game.update(dt, a);
   runner.draw(game);
   updateGameUI(a);
+  updateMonitor(a);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
