@@ -28,7 +28,7 @@ test("project schema whitelists data and rejects unsupported versions, settings 
   ])
     assert.throws(() => validateProject({ ...p, ...patch }));
   assert.equal(listTemplates()[0].id, "runner");
-  assert.equal(getTemplate("runner").assetSlots.length, 11);
+  assert.equal(getTemplate("runner").assetSlots.length, 12);
   assert.throws(() => getTemplate("unknown"));
 });
 test("IndexedDB projects survive reopen, duplicate independently and retain referenced assets", async () => {

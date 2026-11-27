@@ -57,7 +57,7 @@ test("endless chunks cover the view without gaps and retain seeded scenery ident
       const c = config({ length, density: 2 }),
         layout = endlessLayout(distance, c);
       assert.equal(layout.segments.length, SEGMENT_COUNT);
-      assert.equal(layout.props.length, 32);
+      assert.equal(layout.props.length, 64);
       const z = layout.segments.map((s) => s.z).sort((a, b) => a - b);
       assert.ok(z[0] - length / 2 <= -65);
       assert.ok(z.at(-1) + length / 2 >= 9);
@@ -147,7 +147,7 @@ test("scenery stays outside the road with rotated/offset models; pause/reset/see
         "full model bounds stay outside corridor",
       );
     }
-    assert.equal(count, 32);
+    assert.equal(count, 64);
   }
   view.draw(game(10));
   const poses = scene.children.map((r) => [
@@ -213,4 +213,43 @@ test("endless mode, rules, transforms and model references survive browser-local
   assert.equal(loaded.assetRefs.road, asset.id);
   await assert.rejects(store.deleteAsset(asset.id), /used/);
   await store.close();
+});
+
+test("every assigned scenery category has a nearby representative, with bounded stable pools", () => {
+  for (const length of [12, 24, 40])
+    for (const density of [1, 2])
+      for (const seed of [0, 99, 2026])
+        for (const distance of [0, 23.99, 384, 10000]) {
+          const layout = endlessLayout(
+            distance,
+            config({ length, density, seed }),
+          );
+          for (const key of SCATTER_KEYS) {
+            assert.ok(
+              layout.props.some((p) => p.key === key && p.z <= 5 && p.z >= -55),
+              `${key} within view at ${distance}/${length}`,
+            );
+            assert.ok(layout.props.filter((p) => p.key === key).length <= 32);
+          }
+          for (const segment of layout.segments) {
+            const props = layout.props.filter((p) =>
+              p.id.startsWith(segment.id + ":"),
+            );
+            assert.deepEqual(
+              new Set(props.map((p) => p.key)),
+              new Set(SCATTER_KEYS),
+            );
+          }
+        }
+});
+
+test("old saved projects gain an empty log slot without replacing their rock reference", () => {
+  const old = newProject();
+  delete old.settings.objects.log;
+  delete old.assetRefs.log;
+  old.assetRefs.rock = "existing-rock";
+  const project = validateProject(old);
+  assert.equal(project.assetRefs.rock, "existing-rock");
+  assert.equal(project.assetRefs.log, null);
+  assert.deepEqual(project.settings.objects.log, defaultTransform());
 });

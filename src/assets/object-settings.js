@@ -35,6 +35,13 @@ export const OBJECT_SLOTS = Object.freeze({
     floor: true,
     count: SCATTER_POOL,
   },
+  log: {
+    label: "Endless logs & stumps",
+    fit: [2.4, 1.2, 1.8],
+    anchor: [0, 0, 0],
+    floor: true,
+    count: SCATTER_POOL,
+  },
   jumpObstacle: {
     label: "Jump obstacle",
     fit: [1.35, 0.8, 0.8],

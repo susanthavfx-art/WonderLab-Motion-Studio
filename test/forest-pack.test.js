@@ -22,6 +22,14 @@ test("curated forest catalog has 54 independent low-poly, attributed, integrity-
   const counts = {};
   let vertices = 0;
   for (const e of forestCatalog.assets) {
+    assert.equal(
+      e.suggestedSlot,
+      e.category === "deadwood"
+        ? "log"
+        : ["tree", "rock"].includes(e.category)
+          ? e.category
+          : "bush",
+    );
     const bytes = read(e);
     assert.equal(bytes.length, e.bytes);
     assert.equal(createHash("sha256").update(bytes).digest("hex"), e.sha256);
