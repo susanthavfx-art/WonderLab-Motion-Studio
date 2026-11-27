@@ -59,7 +59,7 @@ test("endless rules persist across reload and edits pause gameplay; no assets re
   await expect(page.locator("#environmentLength")).toHaveValue("24");
   expect(errors).toEqual([]);
 });
-test("road and tree/rock/bush library slots can be reused in an endless project and switched to static", async ({
+test("road and tree/rock/bush/log library slots can be reused in an endless project and switched to static", async ({
   page,
 }) => {
   test.setTimeout(120000);
@@ -80,7 +80,7 @@ test("road and tree/rock/bush library slots can be reused in an endless project 
   await expect(page.locator("#studioStatus")).toContainText("Asset imported", {
     timeout: 20000,
   });
-  for (const slot of ["tree", "rock", "bush"]) {
+  for (const slot of ["tree", "rock", "bush", "log"]) {
     await page
       .locator("#assetList")
       .getByRole("button", { name: `Use as ${slot}`, exact: true })
@@ -103,7 +103,7 @@ test("road and tree/rock/bush library slots can be reused in an endless project 
   await expect(page.locator("#projectState")).toContainText("Saved locally", {
     timeout: 30000,
   });
-  for (const slot of ["tree", "rock", "bush"])
+  for (const slot of ["tree", "rock", "bush", "log"])
     await expect(page.locator("#objectStatus-" + slot)).toContainText(
       "jungle-prop.glb",
     );

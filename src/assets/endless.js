@@ -1,4 +1,4 @@
-export const SCATTER_KEYS = ["tree", "rock", "bush"];
+export const SCATTER_KEYS = ["tree", "rock", "bush", "log"];
 export const SEGMENT_COUNT = 8;
 export const SCATTER_POOL = 32;
 export const defaultEnvironment = () => ({
@@ -53,22 +53,26 @@ export function endlessLayout(distance, settings, available = SCATTER_KEYS) {
       z = d - id * settings.length;
     segments.push({ id, z });
     if (!available.length) continue;
-    for (const side of [-1, 1])
-      for (let j = 0; j < settings.density; j++) {
-        const rand = (salt) => random(settings.seed, id, side, j, salt);
-        props.push({
-          id: `${id}:${side}:${j}`,
-          key: available[Math.floor(rand(7) * available.length)],
-          side,
-          x: side * (4 + settings.clearance + rand(19) * 5),
-          z:
-            z +
-            ((j + 0.15 + rand(31) * 0.7) / settings.density - 0.5) *
-              settings.length,
-          rotation: rand(43) * Math.PI * 2,
-          scale: 0.85 + rand(59) * 0.3,
-        });
-      }
+    // Every assigned category appears in every chunk, not a random lottery
+    // that can leave trees absent until beyond the fog. Identity is chunk-based.
+    const placements = Math.max(2, available.length) * settings.density;
+    const phase = Math.floor(
+      random(settings.seed, id, 0, 0, 7) * available.length,
+    );
+    for (let j = 0; j < placements; j++) {
+      const side = (j + id) % 2 === 0 ? -1 : 1;
+      const rand = (salt) => random(settings.seed, id, side, j, salt);
+      props.push({
+        id: `${id}:${j}`,
+        key: available[(j + phase) % available.length],
+        side,
+        x: side * (4 + settings.clearance + rand(19) * 1.5),
+        z:
+          z + ((j + 0.2 + rand(31) * 0.6) / placements - 0.5) * settings.length,
+        rotation: rand(43) * Math.PI * 2,
+        scale: 0.85 + rand(59) * 0.3,
+      });
+    }
   }
   return { segments, props };
 }

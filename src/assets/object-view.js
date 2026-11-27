@@ -213,7 +213,7 @@ export function createObjectView(parent) {
           root.visible = true;
           root.position.set(0, 0, layout.segments[i].z);
         });
-        const used = { tree: 0, rock: 0, bush: 0 };
+        const used = Object.fromEntries(SCATTER_KEYS.map((k) => [k, 0]));
         for (const prop of layout.props) {
           const state = slots[prop.key],
             instance = state.instances[used[prop.key]++];

@@ -83,6 +83,7 @@ test("catalog lists every category and reports a failed selected import without 
   await page.locator("#importForest").click();
   await expect(page.locator("#studioStatus")).toContainText(
     "download failed (404)",
+    { timeout: 20000 },
   );
   await expect(page.locator("#assetList .studio-row")).toHaveCount(0);
 });
@@ -120,4 +121,69 @@ test("forest thumbnail cards select models visually without downloading GLBs", a
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test("actual forest trees, rocks, bushes and logs coexist and retain independent slots on reload", async ({
+  page,
+}) => {
+  test.setTimeout(150000);
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  await page.locator("#environmentMode").selectOption("endless");
+  await page.locator("#openAssets").click();
+  const chosen = [];
+  for (const [category, slot] of [
+    ["tree", "tree"],
+    ["rock", "rock"],
+    ["bush", "bush"],
+    ["deadwood", "log"],
+  ]) {
+    const entry =
+      category === "tree"
+        ? forestCatalog.assets.find((a) => a.id === "tree-trunk-010-28")
+        : forestCatalog.assets.find((a) => a.category === category);
+    chosen.push([slot, entry]);
+    await page.locator("#forestCategory").selectOption(category);
+    await page.locator("#forestAsset").selectOption(entry.id);
+    await page.locator("#importForest").click();
+    await expect(page.locator("#studioStatus")).toContainText(
+      "Forest Pack ready",
+      { timeout: 30000 },
+    );
+    const row = page
+      .locator("#assetList .studio-row")
+      .filter({ hasText: "forest-" + entry.file });
+    await row
+      .getByRole("button", { name: `Use as ${slot}`, exact: true })
+      .click();
+    await expect(page.locator("#studioStatus")).toContainText(
+      `as ${slot}. Save`,
+      { timeout: 20000 },
+    );
+  }
+  await page.locator('[data-close="assetsDialog"]').click();
+  for (const [slot, entry] of chosen)
+    await expect(page.locator("#objectStatus-" + slot)).toContainText(
+      entry.file,
+    );
+  await page.locator("#projectName").fill("All four forest types");
+  await page.locator("#saveProject").click();
+  await expect(page.locator("#projectState")).toContainText("Saved locally");
+  await page.reload();
+  await page.locator("#openProjects").click();
+  await page
+    .locator("#projectList")
+    .getByRole("button", { name: "Open", exact: true })
+    .click();
+  await expect(page.locator("#projectState")).toContainText("Saved locally", {
+    timeout: 30000,
+  });
+  for (const [slot, entry] of chosen)
+    await expect(page.locator("#objectStatus-" + slot)).toContainText(
+      entry.file,
+    );
+  await page.locator("#runnerPanel").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "test-results/forest-four-types.png" });
+  expect(errors).toEqual([]);
 });
