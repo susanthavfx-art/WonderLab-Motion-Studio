@@ -22,6 +22,7 @@ console.log('Production HTML, relative asset paths and local pose runtime assets
 
 const forest = JSON.parse(readFileSync(resolve('src/assets/forest-catalog.json'), 'utf8'));
 for (const entry of forest.assets) {
+  assert.ok(existsSync(resolve(root, "packs/forest-v1/thumbnails", entry.id + ".png")), `Missing thumbnail: ${entry.id}`);
   const file = resolve(root, 'packs/forest-v1', entry.file);
   assert.ok(existsSync(file), `Missing built forest asset: ${entry.file}`);
   const bytes = readFileSync(file);

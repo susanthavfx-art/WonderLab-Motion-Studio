@@ -135,7 +135,7 @@ This milestone lays the foundation for a **template-based motion-game studio**, 
 - `src/projects/storage.js`: shared IndexedDB projects/assets, reference-checked saves and deletion protection. `src/projects/editor.js` owns local CRUD dialogs, dirty-state guards, library assignment and hydration coordination. `src/branding.js` owns image validation/object-URL lifetime; stored blobs do not contain temporary URLs.
 - Shared motion modules stay independent of client branding and storage. Additional templates should consume normalized actions, with asset slots and settings validation appropriate to their gameplay.
 
-Browser regression suite: **16 production tests**, including local save/reload/open, settings and image hydration, rename/duplicate/delete, reference protection, invalid library import and template reset, GLB upload, embedded texture decoding, animation action changes/pause, model persistence/library reuse and static/invalid GLB handling, plus the previous runner/camera/hands-free/branding checks. Run `npm run build && npm run test:browser` (install Playwright Chromium or set `CHROMIUM_PATH`).
+Browser regression suite: **18 production tests**, including local save/reload/open, settings and image hydration, rename/duplicate/delete, reference protection, invalid library import and template reset, GLB upload, embedded texture decoding, animation action changes/pause, model persistence/library reuse and static/invalid GLB handling, plus the previous runner/camera/hands-free/branding checks. Run `npm run build && npm run test:browser` (install Playwright Chromium or set `CHROMIUM_PATH`).
 
 
 ## GLB characters and embedded animations
@@ -263,3 +263,9 @@ Source metadata declares **CC BY 4.0**, by **Ragat Vdoo Kaf** (https://sketchfab
 Credit: **Forest Pack by Ragat Vdoo Kaf, CC BY 4.0. Split, re-centred and texture-resized for WonderLab.** Keep this credit, source/license links and modification notice with redistributed models/client deliverables. The app library, generated GLB metadata, `Models/README.md` and `public/packs/forest-v1/CREDITS.txt` preserve it. This documents the supplied metadata, not independent legal/rights verification.
 
 Verification covers every output's checksum, structural limits, attribution, total vertex preservation and grounded/centred geometry, plus browser imports of the actual textured starter models, duplicate avoidance, slot assignment, save/reload, category lists and failed-download handling. Texture quality and target event-device performance still require operator review with the selected client scene.
+
+### Visual asset thumbnails
+
+Forest Pack categories now include clickable thumbnail cards (with the existing dropdown retained for keyboard selection). All 54 previews are pre-rendered PNGs, so browsing pictures does not download/parse the GLBs. Imported Forest assets reuse those previews. Other local images and GLBs get a small preview when their library row becomes visible; GLBs use a single sequential render queue, with model/GPU resources released after each snapshot. Failed previews show “No preview” without blocking assignment. Previews depict the model's static default pose, not animation playback.
+
+To rebuild Forest thumbnails after changing models, start `npm run dev -- --port 4174`, then run `node scripts/prepare-forest-thumbnails.mjs` (install Playwright Chromium, or set `CHROMIUM_PATH`). Commit `public/packs/forest-v1/thumbnails/` with the catalog/models. Thumbnails are derivatives under the same attribution/license; credits remain in the pack's `CREDITS.txt` and library. Production checks require a thumbnail for each catalog entry.

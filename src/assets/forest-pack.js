@@ -1,3 +1,4 @@
+import { mountAssetThumbnail } from "./thumbnail.js";
 import catalog from "./forest-catalog.json" with { type: "json" };
 import { inspectGlb } from "./glb.js";
 export const forestCatalog = catalog;
@@ -69,7 +70,7 @@ export function mountForestCatalog(
 ) {
   const section = document.createElement("section");
   section.className = "forest-catalog";
-  section.innerHTML = `<h3>Built-in Forest Pack · 54 individual assets</h3><p>Choose an individual model, not the full forest layout. Trees include their trunk and leaves. Imports are saved only in this browser; they do not replace your current project assets.</p><div class="forest-controls"><label>Category<select id="forestCategory"></select></label><label>Asset<select id="forestAsset"></select></label></div><p id="forestInfo"></p><div class="project-actions"><button id="importForest" class="button dark compact">Import selected asset</button><button id="importForestStarter" class="button secondary compact">Import starter set (tree, rock, bush)</button></div><p class="forest-credit"></p>`;
+  section.innerHTML = `<h3>Built-in Forest Pack · 54 individual assets</h3><p>Choose an individual model, not the full forest layout. Trees include their trunk and leaves. Imports are saved only in this browser; they do not replace your current project assets.</p><div class="forest-controls"><label>Category<select id="forestCategory"></select></label><label>Asset<select id="forestAsset"></select></label></div><div id="forestThumbnails" class="forest-thumbnails" role="group" aria-label="Choose a forest model"></div><p id="forestInfo"></p><div class="project-actions"><button id="importForest" class="button dark compact">Import selected asset</button><button id="importForestStarter" class="button secondary compact">Import starter set (tree, rock, bush)</button></div><p class="forest-credit"></p>`;
   parent.append(section);
   parent.querySelector("#assetList")?.before(section);
   const $ = (id) => section.querySelector("#" + id);
@@ -77,16 +78,34 @@ export function mountForestCatalog(
     $("forestCategory").append(new Option(label, key));
   function info() {
     const e = catalog.assets.find((a) => a.id === $("forestAsset").value);
+    for (const card of $("forestThumbnails").children)
+      card.setAttribute("aria-pressed", String(card.dataset.id === e?.id));
     $("forestInfo").textContent = e
       ? `${e.name} · ${e.meshes} meshes · ${e.vertices} vertices · ${(e.bytes / 1024).toFixed(0)} KB · Suggested slot: ${e.suggestedSlot}`
       : "";
   }
   function choices() {
     $("forestAsset").replaceChildren();
+    $("forestThumbnails").replaceChildren();
     for (const e of catalog.assets.filter(
       (a) => a.category === $("forestCategory").value,
-    ))
+    )) {
       $("forestAsset").append(new Option(e.name, e.id));
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "forest-thumbnail-card";
+      card.dataset.id = e.id;
+      card.textContent = e.name;
+      card.onclick = () => {
+        $("forestAsset").value = e.id;
+        info();
+      };
+      $("forestThumbnails").append(card);
+      mountAssetThumbnail(card, {
+        name: e.name,
+        url: `${import.meta.env?.BASE_URL ?? "./"}packs/forest-v1/thumbnails/${e.id}.png`,
+      });
+    }
     info();
   }
   $("forestCategory").onchange = choices;

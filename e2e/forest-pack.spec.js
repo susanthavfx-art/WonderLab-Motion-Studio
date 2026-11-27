@@ -8,7 +8,8 @@ test("curated starter models import on demand, retain credits, assign, save and 
     downloads = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("request", (r) => {
-    if (r.url().includes("/packs/forest-v1/")) downloads.push(r.url());
+    if (/\/packs\/forest-v1\/[^/]+\.glb$/.test(r.url()))
+      downloads.push(r.url());
   });
   await page.goto("/");
   expect(downloads).toHaveLength(0);
@@ -84,4 +85,39 @@ test("catalog lists every category and reports a failed selected import without 
     "download failed (404)",
   );
   await expect(page.locator("#assetList .studio-row")).toHaveCount(0);
+});
+
+test("forest thumbnail cards select models visually without downloading GLBs", async ({
+  page,
+}) => {
+  const models = [];
+  page.on("request", (r) => {
+    if (/\/packs\/forest-v1\/[^/]+\.glb$/.test(r.url())) models.push(r.url());
+  });
+  await page.goto("/");
+  await page.locator("#openAssets").click();
+  await expect(page.locator(".forest-thumbnail-card")).toHaveCount(15);
+  const first = page.locator(".forest-thumbnail-card").first();
+  await expect(first.locator("img")).toBeVisible();
+  await expect
+    .poll(() =>
+      first
+        .locator("img")
+        .evaluate((img) => img.complete && img.naturalWidth > 0),
+    )
+    .toBe(true);
+  const second = page.locator(".forest-thumbnail-card").nth(1);
+  const id = await second.getAttribute("data-id");
+  await second.click();
+  await expect(second).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#forestAsset")).toHaveValue(id);
+  await page.locator("#forestCategory").selectOption("rock");
+  await expect(page.locator(".forest-thumbnail-card")).toHaveCount(10);
+  expect(models).toEqual([]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
 });

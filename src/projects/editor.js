@@ -1,3 +1,5 @@
+import { mountAssetThumbnail } from "../assets/thumbnail.js";
+import { forestCatalog } from "../assets/forest-pack.js";
 import { mountForestCatalog } from "../assets/forest-pack.js";
 import { OBJECT_KEYS } from "../assets/object-settings.js";
 import {
@@ -270,6 +272,20 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
         }),
       );
       $("assetList").append(el);
+      const curated = forestCatalog.assets.find(
+        (e) => a.sourceKey === `${forestCatalog.id}:${e.sha256}`,
+      );
+      mountAssetThumbnail(el, {
+        name: a.name,
+        model: a.kind === "model",
+        url: curated
+          ? `${import.meta.env.BASE_URL}packs/forest-v1/thumbnails/${curated.id}.png`
+          : undefined,
+        source: async () => {
+          const stored = await store.getAsset(a.id);
+          return new File([stored.blob], stored.name, { type: stored.type });
+        },
+      });
     }
   }
   mountForestCatalog($("assetsDialog"), {
