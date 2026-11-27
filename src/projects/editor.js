@@ -1,3 +1,6 @@
+import { mountAssetThumbnail } from "../assets/thumbnail.js";
+import { forestCatalog } from "../assets/forest-pack.js";
+import { mountForestCatalog } from "../assets/forest-pack.js";
 import { OBJECT_KEYS } from "../assets/object-settings.js";
 import {
   isModelFile,
@@ -235,7 +238,7 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
     for (const a of assets) {
       const { el, actions } = row(
         a.name,
-        `${a.kind} · ${a.type} · ${(a.size / 1024).toFixed(0)} KB`,
+        `${a.kind} · ${a.type} · ${(a.size / 1024).toFixed(0)} KB${a.attribution ? " · " + a.attribution : ""}`,
       );
       for (const slot of a.kind === "model"
         ? ["character", ...OBJECT_KEYS]
@@ -269,8 +272,28 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
         }),
       );
       $("assetList").append(el);
+      const curated = forestCatalog.assets.find(
+        (e) => a.sourceKey === `${forestCatalog.id}:${e.sha256}`,
+      );
+      mountAssetThumbnail(el, {
+        name: a.name,
+        model: a.kind === "model",
+        url: curated
+          ? `${import.meta.env.BASE_URL}packs/forest-v1/thumbnails/${curated.id}.png`
+          : undefined,
+        source: async () => {
+          const stored = await store.getAsset(a.id);
+          return new File([stored.blob], stored.name, { type: stored.type });
+        },
+      });
     }
   }
+  mountForestCatalog($("assetsDialog"), {
+    operate,
+    store,
+    refresh: library,
+    message,
+  });
   $("newProject").onclick = () => operate(() => fresh());
   $("saveProject").onclick = () => operate(() => saveAs());
   $("openProjects").onclick = () =>

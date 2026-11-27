@@ -54,6 +54,8 @@ test("client projects persist branding, settings and images across reload; dupli
   await expect(page.locator("#projectState")).toContainText("Saved locally");
   await page.locator("#openAssets").click();
   await expect(page.locator("#assetList .studio-row")).toHaveCount(1);
+  await page.locator("#assetList .asset-thumbnail").scrollIntoViewIfNeeded();
+  await expect(page.locator("#assetList .asset-thumbnail img")).toBeVisible();
   await page
     .locator("#assetList button")
     .getByText("Delete", { exact: true })
@@ -118,6 +120,8 @@ test("shared image library imports validated images and assigns them to a projec
     buffer: png,
   });
   await expect(page.locator("#assetList .studio-row")).toHaveCount(1);
+  await page.locator("#assetList .asset-thumbnail").scrollIntoViewIfNeeded();
+  await expect(page.locator("#assetList .asset-thumbnail img")).toBeVisible();
   await page
     .locator("#assetList button")
     .getByText("Use as background", { exact: true })

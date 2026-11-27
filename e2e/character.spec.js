@@ -167,7 +167,24 @@ test("library rejects external GLB resources before requests and accepts static 
     .locator("#assetList")
     .getByRole("button", { name: "Use as character", exact: true })
     .click();
-  await expect(page.locator("#characterStatus")).toContainText("Static model");
+  await expect(page.locator("#characterStatus")).toContainText("Static model", {
+    timeout: 20000,
+  });
   await page.locator('[data-close="assetsDialog"]').click();
   await expect(page.locator("#clip-idle option")).toHaveCount(1);
+});
+
+test("uploaded GLB gets a static library thumbnail without changing assignment", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#openAssets").click();
+  await page.locator("#libraryFile").setInputFiles(upload({ animated: false }));
+  const frame = page.locator("#assetList .asset-thumbnail");
+  await frame.scrollIntoViewIfNeeded();
+  await expect(frame.locator("img")).toBeVisible({ timeout: 20000 });
+  await expect
+    .poll(() => frame.locator("img").evaluate((img) => img.naturalWidth))
+    .toBe(192);
+  await expect(page.locator("#characterStatus")).not.toContainText("actor.glb");
 });

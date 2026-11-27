@@ -2497,3 +2497,109 @@ dialog p {
   background: #eef3e7;
   border-radius: 8px;
 }
+
+.forest-catalog {
+  margin: 22px 0;
+  padding: 18px;
+  border: 1px solid #dce2d5;
+  border-radius: 12px;
+  background: #f4f7ef;
+}
+.forest-catalog h3 {
+  font-size: 15px;
+}
+.forest-catalog p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.forest-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.forest-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  max-width: 100%;
+}
+.forest-controls select {
+  padding: 9px;
+  max-width: 100%;
+  border: 1px solid #dce2d5;
+  border-radius: 6px;
+}
+.forest-credit {
+  font-size: 11px !important;
+  color: #657366;
+}
+.forest-credit a {
+  text-decoration: underline;
+  color: inherit;
+}
+
+.forest-thumbnails {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+  max-height: 330px;
+  overflow: auto;
+  padding: 4px;
+  margin-top: 12px;
+}
+.forest-thumbnail-card {
+  border: 1px solid #d5ddcd;
+  border-radius: 8px;
+  background: #fff;
+  padding: 6px;
+  font: inherit;
+  font-size: 11px;
+  color: inherit;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.forest-thumbnail-card[aria-pressed="true"] {
+  border: 2px solid #49643d;
+  background: #edf7d6;
+  padding: 5px;
+}
+.forest-thumbnail-card:focus-visible {
+  outline: 3px solid #49643d;
+  outline-offset: 1px;
+}
+.asset-thumbnail {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e9eee3;
+  color: #53634a;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.asset-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.forest-thumbnail-card .asset-thumbnail {
+  margin: 0 auto 6px;
+  width: 100%;
+}
+.studio-row > .asset-thumbnail {
+  float: left;
+  margin: 0 12px 8px 0;
+}
+.studio-row::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+.forest-thumbnail-card {
+  display: block;
+  text-align: center;
+  min-width: 0;
+}

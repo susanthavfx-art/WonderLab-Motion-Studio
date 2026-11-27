@@ -1,0 +1,12 @@
+Forest Pack by Ragat Vdoo Kaf, CC BY 4.0. Split, re-centred and texture-resized for WonderLab.
+Author: https://sketchfab.com/mae_bul_01
+Source: https://sketchfab.com/3d-models/low-poly-forest-pack-low-poly-environment-pack-47b2cb567d1b437fb86d2897353079ab
+License declared in source metadata: CC-BY-4.0
+https://creativecommons.org/licenses/by/4.0/
+
+Modified for WonderLab: 54 authored groups split, unused resources pruned,
+geometry/normals/UVs preserved (no decimation), small indices stored as uint16,
+pivots centred/grounded, embedded PNG atlases exported at 512px with alpha.
+
+Preserve author/source/license/modification credit with redistributed models
+and client deliverables. No endorsement is implied.
