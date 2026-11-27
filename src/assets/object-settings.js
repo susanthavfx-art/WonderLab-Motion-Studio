@@ -1,10 +1,39 @@
+import { SEGMENT_COUNT, SCATTER_POOL } from "./endless.js";
 export const OBJECT_SLOTS = Object.freeze({
   environment: {
-    label: "Environment / scenery",
+    label: "Static environment / scenery",
     fit: [40, 12, 60],
     anchor: [0, 0, -22],
     floor: true,
     count: 1,
+  },
+  road: {
+    label: "Endless road segment",
+    fit: [8, 1, 24],
+    anchor: [0, 0, 0],
+    floor: true,
+    count: SEGMENT_COUNT,
+  },
+  tree: {
+    label: "Endless trees",
+    fit: [2.4, 4, 2.4],
+    anchor: [0, 0, 0],
+    floor: true,
+    count: SCATTER_POOL,
+  },
+  rock: {
+    label: "Endless rocks",
+    fit: [1.5, 1.2, 1.5],
+    anchor: [0, 0, 0],
+    floor: true,
+    count: SCATTER_POOL,
+  },
+  bush: {
+    label: "Endless bushes",
+    fit: [2, 1.2, 2],
+    anchor: [0, 0, 0],
+    floor: true,
+    count: SCATTER_POOL,
   },
   jumpObstacle: {
     label: "Jump obstacle",

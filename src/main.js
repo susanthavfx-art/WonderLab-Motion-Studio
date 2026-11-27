@@ -1000,6 +1000,7 @@ const studio = mountProjectStudio({
         thresholds: { ...engine.thresholds },
         character: character.settings,
         objects: objects.settings,
+        environment: objects.environment,
       },
       files: { ...brandFiles, character: character.file, ...objects.files },
     };
@@ -1010,7 +1011,11 @@ const studio = mountProjectStudio({
     else await loadBrandFile(file, slot);
   },
   apply: async (project, files) => {
-    const staged = await objectEditor.stage(files, project.settings.objects);
+    const staged = await objectEditor.stage(
+      files,
+      project.settings.objects,
+      project.settings.environment,
+    );
     try {
       await characterEditor.load(files.character, project.settings.character);
       staged.commit();

@@ -41,7 +41,7 @@ export function createRunner(host) {
     box(0.15, 0.15, 60, "#5b755e", x, 0, -23),
   );
   const defaultScenery = [];
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 32; i++) {
     const x = (i % 2 ? 1 : -1) * (5 + (i % 3));
     defaultScenery.push(box(0.3, 1.5, 0.3, "#75926f", x, 0.75, -i * 3));
     defaultScenery.push(box(1.6, 2, 1.6, "#a7b797", x, 2, -i * 3));
@@ -118,7 +118,36 @@ export function createRunner(host) {
             3 - ((Math.floor(i / 2) * 3 + 48 - (game.distance % 48)) % 48)),
       );
       objects.draw(game);
-      defaultScenery.forEach((m) => (m.visible = !objects.has("environment")));
+      const endless = objects.mode() === "endless";
+      track.visible = !(endless && objects.has("road"));
+      markings.forEach(
+        (m) => (m.position.y = endless && objects.has("road") ? 0.015 : 0),
+      );
+      const fallback = objects.layout()?.props;
+      defaultScenery.forEach((m, i) => {
+        const index = Math.floor(i / 2);
+        m.visible = endless
+          ? !objects.hasScatter() && !!fallback?.[index]
+          : index < 16 && !objects.has("environment");
+        if (endless && fallback?.[index]) {
+          const prop = fallback[index];
+          m.position.set(
+            prop.x + prop.side * 1.4,
+            (i % 2 ? 2 : 0.75) * prop.scale,
+            prop.z,
+          );
+          m.rotation.y = prop.rotation;
+          m.scale.setScalar(prop.scale);
+        } else {
+          m.position.set(
+            (index % 2 ? 1 : -1) * (5 + (index % 3)),
+            i % 2 ? 2 : 0.75,
+            -index * 3,
+          );
+          m.rotation.y = 0;
+          m.scale.setScalar(1);
+        }
+      });
       obstacles.forEach((pool, i) => {
         const row = game.course[game.nextRow + i];
         const visible = !!row && row.distance - game.distance < 49;

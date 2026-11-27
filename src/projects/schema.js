@@ -1,3 +1,4 @@
+import { defaultEnvironment, validateEnvironment } from "../assets/endless.js";
 import {
   OBJECT_KEYS,
   defaultObjects,
@@ -19,6 +20,7 @@ export const defaultSettings = () => ({
   thresholds: { ...defaults },
   character: defaultCharacter(),
   objects: defaultObjects(),
+  environment: defaultEnvironment(),
 });
 export function validateProject(p) {
   if (!p || p.schemaVersion !== 1)
@@ -87,6 +89,7 @@ export function validateProject(p) {
       handsFree: s.handsFree,
       character: validateCharacter(s.character),
       objects: validateObjects(s.objects),
+      environment: validateEnvironment(s.environment),
       thresholds: Object.fromEntries(
         Object.keys(defaults).map((k) => [k, s.thresholds[k]]),
       ),

@@ -52,7 +52,13 @@ test("object transforms are whitelisted, bounded and old projects gain independe
 test("static pools fit models, clone skeletons safely, follow course anchors and do not mutate gameplay", async () => {
   const scene = new Group(),
     view = createObjectView(scene);
-  for (const k of OBJECT_KEYS) await view.load(k, file());
+  for (const k of [
+    "environment",
+    "jumpObstacle",
+    "duckObstacle",
+    "collectible",
+  ])
+    await view.load(k, file());
   assert.equal(scene.children.length, 16);
   const g = game(),
     before = JSON.stringify(g);
