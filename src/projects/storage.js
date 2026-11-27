@@ -92,7 +92,7 @@ export function createStudioStore(name = "wonderlab-studio-v1") {
       run(["projects"], "readwrite", (tx) =>
         request(tx.objectStore("projects").delete(id)),
       ),
-    async putAsset(file) {
+    async putAsset(file, metadata = {}) {
       const model = isModelFile(file);
       if (
         !(file instanceof Blob) ||
@@ -113,6 +113,12 @@ export function createStudioStore(name = "wonderlab-studio-v1") {
         size: file.size,
         createdAt: Date.now(),
         blob: file,
+        ...(typeof metadata.sourceKey === "string"
+          ? { sourceKey: metadata.sourceKey.slice(0, 160) }
+          : {}),
+        ...(typeof metadata.attribution === "string"
+          ? { attribution: metadata.attribution.slice(0, 1500) }
+          : {}),
       };
       await run(["assets"], "readwrite", (tx) =>
         request(tx.objectStore("assets").put(asset)),

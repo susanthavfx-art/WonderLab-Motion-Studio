@@ -90,7 +90,7 @@ export function mountObjectEditor({ view, pause, changed }) {
     } catch (e) {
       if (generation === generations[key])
         $("objectStatus-" + key).textContent =
-          `Object not changed: ${e.message}`;
+          `Object not changed (${file?.name || "default"}): ${e.message}`;
       throw e;
     } finally {
       pending--;

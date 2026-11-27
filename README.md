@@ -52,13 +52,13 @@ This first vertical slice uses Vite + plain ES modules + Three.js, with pure mot
 
 ## Verification and honest limitations
 
-- `npm test`: **71/71 tests passed**: 6 endless-environment layout/configuration/recycling/safety/storage tests, 7 object-slot schema/transform/pooling/disposal/persistence tests, 6 GLB/character lifecycle, animation, backward-compatibility and typed-storage tests, 3 project schema/IndexedDB tests, 3 branding validation/resource-lifecycle tests, 6 hands-free readiness/safety tests, 3 hands-up detector tests, 3 physical-jump tests, 20 motion integration tests plus 14 runner tests (seeded fair spacing, countdown, modes A/B, lane transitions, one-shot collisions/pickups, jump/duck rules, pause/reacquisition, results/reset and 30/60/120 FPS agreement).
+- `npm test`: **76/76 tests passed**: 5 curated forest-pack integrity/geometry/import/storage tests, 6 endless-environment layout/configuration/recycling/safety/storage tests, 7 object-slot schema/transform/pooling/disposal/persistence tests, 6 GLB/character lifecycle, animation, backward-compatibility and typed-storage tests, 3 project schema/IndexedDB tests, 3 branding validation/resource-lifecycle tests, 6 hands-free readiness/safety tests, 3 hands-up detector tests, 3 physical-jump tests, 20 motion integration tests plus 14 runner tests (seeded fair spacing, countdown, modes A/B, lane transitions, one-shot collisions/pickups, jump/duck rules, pause/reacquisition, results/reset and 30/60/120 FPS agreement).
 - `npm run build`: passed. A bundle-size advisory remains for the Three.js-containing application bundle; runtime pose WASM/models add approximately 18 MB before compression. No CDN is required, but this is not an offline-cached app.
 - Headless Chromium smoke checks: rendered WebGL playground, keyboard lean/run/jump, guide, calibration guard, sensitivity reset, source switching, simulated camera permission denial/retry and 390px layout without horizontal overflow; no uncaught page errors. An initial fixed-100ms browser assertion was timing-sensitive under software WebGL; rerunning with condition-based waits passed.
 - `npm audit` after dependency setup: **0 vulnerabilities**.
 - The operator reported working lean, squat/release, swing, run-in-place and jump on their own webcam setup after the Pages fix. This is a qualitative first-device check, not a measured accuracy benchmark. The next operator test found that physical jumps lost tracking, while lean/squat/running worked. A later operator check confirmed the hands-up mapping works while running. Hands up remains default; optional Physical jump is now selectable and still needs safe real-webcam validation with adequate framing. Being a smaller player does not guarantee reliable tracking. **Other players/lighting, event-hardware FPS/latency and endurance have not been validated.** Passing synthetic/browser tests is not proof of those properties. Squat/run discrimination remains experimental. All required body regions currently gate motion together; per-action partial-body support is deferred.
 - Preview mirroring changes display only; it does not silently invert the normalized game direction. Finger-level tracking is not included.
-- No asset licences have been audited for future client distribution; the current runner uses generated geometry, not copied game models or music.
+- The default runner uses generated geometry. The optional built-in Forest Pack preserves its source-declared CC BY 4.0 author/source/license/modification credits (see below); this is not an independent rights audit. Audit rights and preserve attribution when distributing client assets; no music is bundled.
 
 ## Event branding controls
 
@@ -135,7 +135,7 @@ This milestone lays the foundation for a **template-based motion-game studio**, 
 - `src/projects/storage.js`: shared IndexedDB projects/assets, reference-checked saves and deletion protection. `src/projects/editor.js` owns local CRUD dialogs, dirty-state guards, library assignment and hydration coordination. `src/branding.js` owns image validation/object-URL lifetime; stored blobs do not contain temporary URLs.
 - Shared motion modules stay independent of client branding and storage. Additional templates should consume normalized actions, with asset slots and settings validation appropriate to their gameplay.
 
-Browser regression suite: **14 production tests**, including local save/reload/open, settings and image hydration, rename/duplicate/delete, reference protection, invalid library import and template reset, GLB upload, embedded texture decoding, animation action changes/pause, model persistence/library reuse and static/invalid GLB handling, plus the previous runner/camera/hands-free/branding checks. Run `npm run build && npm run test:browser` (install Playwright Chromium or set `CHROMIUM_PATH`).
+Browser regression suite: **16 production tests**, including local save/reload/open, settings and image hydration, rename/duplicate/delete, reference protection, invalid library import and template reset, GLB upload, embedded texture decoding, animation action changes/pause, model persistence/library reuse and static/invalid GLB handling, plus the previous runner/camera/hands-free/branding checks. Run `npm run build && npm run test:browser` (install Playwright Chromium or set `CHROMIUM_PATH`).
 
 
 ## GLB characters and embedded animations
@@ -233,3 +233,33 @@ Object regressions cover default migration, independent validated transforms, fi
 - **Reset transform** / **Use default geometry** retain their slot-local meaning and do not change mode/rules. Removing the custom road uses the procedural track; removing all three scenery sources uses generated trees. A static-stage GLB is retained in project/library storage when switching to Endless and reappears when returning to Static.
 
 `src/assets/endless.js` owns pure bounded config, seeded layout and chunk identities; `object-view.js` owns prepared/pool resources, road fitting and safe prop positioning; the existing object editor/schema/library persist the mode and typed slots. Tests cover long distances, smallest/largest segment lengths, boundary continuity, deterministic layout, no new model resources on recycling/rule changes, flat road fitting, safe transformed-model bounds, unchanged gameplay state, static fallback, storage and UI persistence. Real jungle/snow assets and target-hardware endurance still need operator validation.
+
+
+## Curated built-in Forest Pack
+
+The user-provided `Models/forest_pack.glb` is a **whole asset pack**, not a single tree: 54 authored object groups, 69 mesh primitives and 9,388 vertices. Its rejection in a repeated scenery slot was due to the **16-mesh limit**, not excessive polygon count. That limit is not raised. The original is retained byte-for-byte; see `Models/README.md` for provenance, the source hash and rebuild instructions.
+
+### Use it in the app
+
+1. Open **Asset Library → Built-in Forest Pack** (above the local asset list).
+2. Pick a category and individual asset; the panel displays original object name, mesh/vertex counts, download size and suggested scenery slot. Choose **Import selected asset**, or **Import starter set (tree, rock, bush)** for the first oak, stone and light-bush assets.
+3. In the local asset list, choose **Use as tree / rock / bush**. Select **Endless straight track** to see repeated roadside placement, then **Save project**. Import does not silently assign assets, change mode, replace a character or alter existing projects.
+4. Imports are idempotent: the same verified curated content reuses its existing local record, retaining current project references. Deleting an unused import is allowed; importing again restores it from the built-in catalog. Usual assigned/saved-reference deletion protection remains active. This is still **browser-local** storage, not cloud sync or a backup.
+
+Categories: **15 trees, 10 rocks, 8 bushes, 9 logs/stumps and 12 ground-cover models** (ferns, grass, flowers and mushrooms). Trees retain trunk+leaves together. Logs/stumps are labelled as such, not claimed to be standing dead-tree models. The current environment still supports one assigned source per category: importing several variants makes them selectable in the library but does not automatically scatter all variants simultaneously. This curated split does not add an arbitrary runtime pack-splitting feature.
+
+### Preparation and download trade-offs
+
+- Generated self-contained assets are under `public/packs/forest-v1`; their counts, names, categories, source metadata and SHA-256 hashes are in `src/assets/forest-catalog.json`.
+- Each model has **1–2 meshes and at most 650 vertices**. Unused geometry/materials/textures are removed, accessor data is packed and small indices use uint16. Original positions/normals/UVs and triangle topology are retained, with no decimation. Axis-conversion ancestors are preserved and each asset's pivot is centred horizontally/grounded. Embedded PNG texture atlases are resized from 1024 to **512 pixels**, preserving alpha; this is an intentional texture-resolution trade-off, not lossless texture optimization.
+- Total standalone files occupy about **13 MiB**, larger in aggregate than the original 1.4 MB pack because each independent GLB embeds the atlases it needs. Assets are **downloaded only when selected**, not all on app startup; typical individual downloads are roughly 190–390 KB. This avoids fetching/loading the whole source pack per tree and keeps the app's existing self-contained/no-external-resources policy. The catalog is bundled, but no models are automatically copied into a user's IndexedDB.
+- Imports validate HTTP success, exact byte size, SHA-256 and the GLB structure before writing a local record. A corrupt existing curated record is reported, not silently overwritten while saved projects may reference it. Failed downloads/integrity checks leave existing records untouched. Author attribution is retained on each imported record and in the GLB metadata.
+- `scripts/prepare-forest-pack.py` is deterministic for the pinned source/Pillow version. Use `scripts/requirements-assets.txt`; `--texture-size 1024` can retain original atlas resolution if needed, at larger file sizes. Rebuild and commit the generated files/catalog together. Production asset checks verify all 54 distributed GLBs against the catalog.
+
+### Attribution and client delivery
+
+Source metadata declares **CC BY 4.0**, by **Ragat Vdoo Kaf** (https://sketchfab.com/mae_bul_01), titled “low poly forest pack, low poly environment pack”. Source: https://sketchfab.com/3d-models/low-poly-forest-pack-low-poly-environment-pack-47b2cb567d1b437fb86d2897353079ab . License: https://creativecommons.org/licenses/by/4.0/ .
+
+Credit: **Forest Pack by Ragat Vdoo Kaf, CC BY 4.0. Split, re-centred and texture-resized for WonderLab.** Keep this credit, source/license links and modification notice with redistributed models/client deliverables. The app library, generated GLB metadata, `Models/README.md` and `public/packs/forest-v1/CREDITS.txt` preserve it. This documents the supplied metadata, not independent legal/rights verification.
+
+Verification covers every output's checksum, structural limits, attribution, total vertex preservation and grounded/centred geometry, plus browser imports of the actual textured starter models, duplicate avoidance, slot assignment, save/reload, category lists and failed-download handling. Texture quality and target event-device performance still require operator review with the selected client scene.

@@ -1,3 +1,4 @@
+import { mountForestCatalog } from "../assets/forest-pack.js";
 import { OBJECT_KEYS } from "../assets/object-settings.js";
 import {
   isModelFile,
@@ -235,7 +236,7 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
     for (const a of assets) {
       const { el, actions } = row(
         a.name,
-        `${a.kind} · ${a.type} · ${(a.size / 1024).toFixed(0)} KB`,
+        `${a.kind} · ${a.type} · ${(a.size / 1024).toFixed(0)} KB${a.attribution ? " · " + a.attribution : ""}`,
       );
       for (const slot of a.kind === "model"
         ? ["character", ...OBJECT_KEYS]
@@ -271,6 +272,12 @@ export function mountProjectStudio({ capture, apply, pause, assign }) {
       $("assetList").append(el);
     }
   }
+  mountForestCatalog($("assetsDialog"), {
+    operate,
+    store,
+    refresh: library,
+    message,
+  });
   $("newProject").onclick = () => operate(() => fresh());
   $("saveProject").onclick = () => operate(() => saveAs());
   $("openProjects").onclick = () =>

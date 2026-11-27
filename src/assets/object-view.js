@@ -109,7 +109,7 @@ export function createObjectView(parent) {
           });
           if (meshes > 16 || vertices > 50000)
             throw Error(
-              "Repeated road/scenery models are limited to 16 meshes and 50,000 vertices per GLB. Use low-poly assets.",
+              `This GLB has ${meshes} meshes and ${vertices.toLocaleString("en-US")} vertices. Repeated road/scenery limits: 16 meshes and 50,000 vertices. Import an individual prop, not an entire pack.`,
             );
         }
         const slot = OBJECT_SLOTS[key],

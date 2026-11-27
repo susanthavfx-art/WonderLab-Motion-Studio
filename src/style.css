@@ -2497,3 +2497,44 @@ dialog p {
   background: #eef3e7;
   border-radius: 8px;
 }
+
+.forest-catalog {
+  margin: 22px 0;
+  padding: 18px;
+  border: 1px solid #dce2d5;
+  border-radius: 12px;
+  background: #f4f7ef;
+}
+.forest-catalog h3 {
+  font-size: 15px;
+}
+.forest-catalog p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.forest-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.forest-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  max-width: 100%;
+}
+.forest-controls select {
+  padding: 9px;
+  max-width: 100%;
+  border: 1px solid #dce2d5;
+  border-radius: 6px;
+}
+.forest-credit {
+  font-size: 11px !important;
+  color: #657366;
+}
+.forest-credit a {
+  text-decoration: underline;
+  color: inherit;
+}
